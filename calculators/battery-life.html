@@ -67,7 +67,7 @@
     <!-- Simple load -->
     <div class="card">
       <h2>Load — Simple (Constant Current)</h2>
-      <div class="formula-block">Runtime = (Capacity × DoD% × Efficiency%) / I<sub>avg</sub></div>
+      <div class="formula-block">$$\text{Runtime} = \dfrac{\text{Capacity} \times \text{DoD}\% \times \text{Eff}\%}{I_\text{avg}}$$</div>
       <div class="form-grid">
         <div class="form-group">
           <label for="iload">Average Load Current</label>
@@ -95,7 +95,7 @@
     <!-- Duty-cycle mode -->
     <div class="card">
       <h2>Load — Duty-Cycle Mode (Active + Sleep)</h2>
-      <div class="formula-block">I<sub>avg</sub> = I<sub>active</sub> × D + I<sub>sleep</sub> × (1 − D) &nbsp;|&nbsp; D = t<sub>active</sub> / (t<sub>active</sub> + t<sub>sleep</sub>)</div>
+      <div class="formula-block">$$I_\text{avg} = I_\text{active}\,D + I_\text{sleep}\,(1-D) \qquad D = \dfrac{t_\text{active}}{t_\text{active}+t_\text{sleep}}$$</div>
       <div class="mode-row">
         <div class="form-group">
           <label for="i-active">Active Current</label>

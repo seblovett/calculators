@@ -58,7 +58,7 @@
       <!-- dBm → everything -->
       <div class="conv-section">
         <h2 style="margin-bottom:.75rem;">From dBm</h2>
-        <div class="formula-block">P<sub>mW</sub> = 10<sup>dBm/10</sup> &nbsp;|&nbsp; V<sub>rms</sub> = √(P<sub>W</sub> × Z)</div>
+        <div class="formula-block">$$P_\text{mW} = 10^{\text{dBm}/10} \qquad V_\text{rms} = \sqrt{P_W \cdot Z}$$</div>
         <div class="form-grid">
           <div class="form-group">
             <label for="in-dbm">Power Level</label>
@@ -77,7 +77,7 @@
       <!-- Watts → everything -->
       <div class="conv-section">
         <h2 style="margin-bottom:.75rem;">From Power</h2>
-        <div class="formula-block">dBm = 10 × log₁₀(P<sub>mW</sub>) &nbsp;|&nbsp; V<sub>rms</sub> = √(P<sub>W</sub> × Z)</div>
+        <div class="formula-block">$$\text{dBm} = 10\log_{10}(P_\text{mW}) \qquad V_\text{rms} = \sqrt{P_W \cdot Z}$$</div>
         <div class="form-grid">
           <div class="form-group">
             <label for="in-pwr">Power</label>
@@ -97,7 +97,7 @@
       <!-- Volts → everything -->
       <div class="conv-section">
         <h2 style="margin-bottom:.75rem;">From Voltage</h2>
-        <div class="formula-block">P<sub>W</sub> = V<sub>rms</sub>² / Z &nbsp;|&nbsp; dBm = 10 × log₁₀(P<sub>mW</sub>)</div>
+        <div class="formula-block">$$P_W = \dfrac{V_\text{rms}^2}{Z} \qquad \text{dBm} = 10\log_{10}(P_\text{mW})$$</div>
         <div class="form-grid">
           <div class="form-group">
             <label for="in-v">RMS Voltage</label>
@@ -117,7 +117,7 @@
     <!-- dB gain/loss -->
     <div class="card">
       <h2>Power Gain / Loss</h2>
-      <div class="formula-block">P<sub>out</sub>(dBm) = P<sub>in</sub>(dBm) + Gain(dB)</div>
+      <div class="formula-block">$$P_\text{out}(\text{dBm}) = P_\text{in}(\text{dBm}) + \text{Gain}(\text{dB})$$</div>
       <div class="form-grid">
         <div class="form-group">
           <label for="gl-pin">Input Power</label>

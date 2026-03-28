@@ -69,3 +69,48 @@ const NAV = [
 
   placeholder.innerHTML = sectionsHTML;
 })();
+
+// ── KaTeX math rendering ──────────────────────────────────────────────────────
+// Inject KaTeX CSS + JS from CDN, then auto-render all .formula-block elements.
+(function () {
+  const KATEX_VERSION = '0.16.11';
+  const CDN = `https://cdn.jsdelivr.net/npm/katex@${KATEX_VERSION}/dist`;
+
+  function injectLink(href) {
+    const el = document.createElement('link');
+    el.rel = 'stylesheet'; el.href = href;
+    document.head.appendChild(el);
+  }
+  function injectScript(src, onload) {
+    const el = document.createElement('script');
+    el.src = src; el.defer = false;
+    if (onload) el.onload = onload;
+    document.head.appendChild(el);
+  }
+
+  function renderFormulas() {
+    if (!window.renderMathInElement) return;
+    document.querySelectorAll('.formula-block').forEach(el => {
+      try {
+        renderMathInElement(el, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '\\(', right: '\\)', display: false },
+          ],
+          throwOnError: false,
+        });
+      } catch (e) { /* leave as-is if render fails */ }
+    });
+  }
+
+  injectLink(`${CDN}/katex.min.css`);
+  injectScript(`${CDN}/katex.min.js`, function () {
+    injectScript(`${CDN}/contrib/auto-render.min.js`, function () {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderFormulas);
+      } else {
+        renderFormulas();
+      }
+    });
+  });
+})();

@@ -51,7 +51,7 @@
     <!-- ── Low-Pass ── -->
     <div class="card filter-panel" id="panel-lp">
       <h2>Low-Pass RC Filter</h2>
-      <div class="formula-block">f<sub>c</sub> = 1 / (2π R C) &nbsp;|&nbsp; |H(f)| = 1 / √(1 + (f/f<sub>c</sub>)²)</div>
+      <div class="formula-block">$$f_c = \dfrac{1}{2\pi RC} \qquad |H(f)| = \dfrac{1}{\sqrt{1+(f/f_c)^2}}$$</div>
       <div class="form-grid">
         <div class="form-group">
           <label for="lp-r">Resistance (R)</label>
@@ -106,7 +106,7 @@
     <!-- ── High-Pass ── -->
     <div class="card filter-panel" id="panel-hp" style="display:none;">
       <h2>High-Pass RC Filter</h2>
-      <div class="formula-block">f<sub>c</sub> = 1 / (2π R C) &nbsp;|&nbsp; |H(f)| = (f/f<sub>c</sub>) / √(1 + (f/f<sub>c</sub>)²)</div>
+      <div class="formula-block">$$f_c = \dfrac{1}{2\pi RC} \qquad |H(f)| = \dfrac{f/f_c}{\sqrt{1+(f/f_c)^2}}$$</div>
       <div class="form-grid">
         <div class="form-group">
           <label for="hp-r">Resistance (R)</label>
@@ -161,7 +161,7 @@
     <!-- ── Band-Pass ── -->
     <div class="card filter-panel" id="panel-bp" style="display:none;">
       <h2>Band-Pass Filter (HP + LP stages)</h2>
-      <div class="formula-block">f<sub>L</sub> = 1/(2πR<sub>HP</sub>C<sub>HP</sub>) &nbsp;|&nbsp; f<sub>H</sub> = 1/(2πR<sub>LP</sub>C<sub>LP</sub>)</div>
+      <div class="formula-block">$$f_L = \dfrac{1}{2\pi R_{HP}C_{HP}} \qquad f_H = \dfrac{1}{2\pi R_{LP}C_{LP}}$$</div>
       <p style="font-size:.85rem;color:var(--text-muted);margin:0 0 .85rem;">High-Pass stage (sets lower cutoff f<sub>L</sub>):</p>
       <div class="form-grid">
         <div class="form-group">

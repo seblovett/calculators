@@ -46,7 +46,7 @@
     <!-- ── Non-Inverting ── -->
     <div class="card mode-panel" id="panel-noninv">
       <h2>Non-Inverting Amplifier</h2>
-      <div class="formula-block">V<sub>out</sub> = V<sub>in</sub> × (1 + R<sub>f</sub> / R<sub>1</sub>)</div>
+      <div class="formula-block">$$V_\text{out} = V_\text{in} \times \left(1 + \dfrac{R_f}{R_1}\right)$$</div>
       <div class="form-grid">
         <div class="form-group">
           <label for="ni-vin">Input Voltage (V<sub>in</sub>)</label>
@@ -87,7 +87,7 @@
     <!-- ── Inverting ── -->
     <div class="card mode-panel" id="panel-inv" style="display:none;">
       <h2>Inverting Amplifier</h2>
-      <div class="formula-block">V<sub>out</sub> = −V<sub>in</sub> × (R<sub>f</sub> / R<sub>in</sub>)</div>
+      <div class="formula-block">$$V_\text{out} = -V_\text{in} \times \dfrac{R_f}{R_\text{in}}$$</div>
       <div class="form-grid">
         <div class="form-group">
           <label for="inv-vin">Input Voltage (V<sub>in</sub>)</label>
@@ -128,7 +128,7 @@
     <!-- ── Summing ── -->
     <div class="card mode-panel" id="panel-summing" style="display:none;">
       <h2>Summing Amplifier (Inverting)</h2>
-      <div class="formula-block">V<sub>out</sub> = −R<sub>f</sub> × (V<sub>1</sub>/R<sub>1</sub> + V<sub>2</sub>/R<sub>2</sub> + V<sub>3</sub>/R<sub>3</sub>)</div>
+      <div class="formula-block">$$V_\text{out} = -R_f\!\left(\dfrac{V_1}{R_1}+\dfrac{V_2}{R_2}+\dfrac{V_3}{R_3}\right)$$</div>
       <div class="form-grid">
         <div class="form-group">
           <label for="sum-rf">Feedback Resistor (R<sub>f</sub>)</label>
@@ -182,7 +182,7 @@
     <!-- ── Differential ── -->
     <div class="card mode-panel" id="panel-diff" style="display:none;">
       <h2>Differential Amplifier</h2>
-      <div class="formula-block">V<sub>out</sub> = (R<sub>f</sub> / R<sub>1</sub>) × (V<sub>2</sub> − V<sub>1</sub>)</div>
+      <div class="formula-block">$$V_\text{out} = \dfrac{R_f}{R_1}\,(V_2 - V_1)$$</div>
       <div class="form-grid">
         <div class="form-group">
           <label for="diff-v1">V<sub>1</sub> (inverting input)</label>
@@ -218,7 +218,7 @@
     <!-- ── Voltage Follower ── -->
     <div class="card mode-panel" id="panel-voltage_follower" style="display:none;">
       <h2>Voltage Follower (Unity-Gain Buffer)</h2>
-      <div class="formula-block">V<sub>out</sub> = V<sub>in</sub> &nbsp;&nbsp;|&nbsp;&nbsp; Gain = +1 V/V (0 dB)</div>
+      <div class="formula-block">$$V_\text{out} = V_\text{in} \qquad \text{Gain} = +1\,\text{V/V}\;(0\,\text{dB})$$</div>
       <div class="form-grid">
         <div class="form-group">
           <label for="vf-vin">Input Voltage (V<sub>in</sub>)</label>
