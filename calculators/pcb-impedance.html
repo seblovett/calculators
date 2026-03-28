@@ -104,11 +104,9 @@
           </defs>
         </svg>
         <div class="diagram-desc">
-          Trace on top of dielectric, ground plane below.<br>
+          Trace on top of dielectric, ground plane below.
           Used for outer-layer signal routing.
-          <br><br>
-          <strong>Formula (IPC-2141A):</strong><br>
-          Z₀ = (87/√(εr+1.41)) × ln(5.98H/(0.8W+T))
+          <div class="formula-block">$$Z_0 = \dfrac{87}{\sqrt{\varepsilon_r+1.41}}\ln\!\left(\dfrac{5.98H}{0.8W+T}\right)$$</div>
         </div>
       </div>
       <div class="form-grid">
@@ -141,10 +139,11 @@
       <h2>Embedded Microstrip</h2>
       <div class="diagram">
         <div class="diagram-desc">
-          Trace is covered by a dielectric layer above (e.g. soldermask or prepreg). Ground plane below.<br><br>
-          <strong>Formula:</strong><br>
-          εr_eff = εr × (1 − e^(−1.55 × B/H))<br>
-          Z₀ = (87/√(εr_eff+1.41)) × ln(5.98H/(0.8W+T))
+          Trace is covered by a dielectric layer above (e.g. soldermask or prepreg). Ground plane below.
+          <div class="formula-block">
+            $$\varepsilon_{r,\text{eff}} = \varepsilon_r\!\left(1 - e^{-1.55\,B/H}\right)$$
+            $$Z_0 = \dfrac{87}{\sqrt{\varepsilon_{r,\text{eff}}+1.41}}\ln\!\left(\dfrac{5.98H}{0.8W+T}\right)$$
+          </div>
         </div>
       </div>
       <div class="form-grid">
@@ -180,10 +179,8 @@
       <h2>Stripline (Symmetric)</h2>
       <div class="diagram">
         <div class="diagram-desc">
-          Trace is embedded between two ground planes, centred in the dielectric.<br><br>
-          <strong>Formula (IPC-2141A):</strong><br>
-          Z₀ = (60/√εr) × ln(4B / (0.67π(0.8W+T)))<br>
-          where B = distance between ground planes.
+          Trace is embedded between two ground planes, centred in the dielectric. \(B\) = distance between ground planes.
+          <div class="formula-block">$$Z_0 = \dfrac{60}{\sqrt{\varepsilon_r}}\ln\!\left(\dfrac{4B}{0.67\pi\,(0.8W+T)}\right)$$</div>
         </div>
       </div>
       <div class="form-grid">
@@ -216,10 +213,8 @@
       <h2>Differential Pair — Microstrip</h2>
       <div class="diagram">
         <div class="diagram-desc">
-          Two coupled microstrip traces. Differential impedance is the impedance seen between the two conductors.<br><br>
-          <strong>Formula:</strong><br>
-          Zdiff ≈ 2 × Z₀ × (1 − 0.347 × e^(−2.9 × S/H))<br>
-          where Z₀ is single-ended microstrip impedance.
+          Two coupled microstrip traces. Differential impedance is the impedance seen between the two conductors. \(Z_0\) is the single-ended microstrip impedance.
+          <div class="formula-block">$$Z_\text{diff} \approx 2Z_0\!\left(1 - 0.347\,e^{-2.9\,S/H}\right)$$</div>
         </div>
       </div>
       <div class="form-grid">
@@ -255,10 +250,8 @@
       <h2>Differential Pair — Stripline</h2>
       <div class="diagram">
         <div class="diagram-desc">
-          Two coupled traces embedded between ground planes.<br><br>
-          <strong>Formula:</strong><br>
-          Zdiff ≈ 2 × Z₀ × (1 − 0.347 × e^(−2.9 × S/B))<br>
-          where Z₀ is single-ended stripline impedance.
+          Two coupled traces embedded between ground planes. \(Z_0\) is the single-ended stripline impedance.
+          <div class="formula-block">$$Z_\text{diff} \approx 2Z_0\!\left(1 - 0.347\,e^{-2.9\,S/B}\right)$$</div>
         </div>
       </div>
       <div class="form-grid">
