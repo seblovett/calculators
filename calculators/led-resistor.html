@@ -62,7 +62,7 @@
       <div class="formula-block">R = (Vs − n × Vf) / If &nbsp;&nbsp;|&nbsp;&nbsp; Power = If² × R</div>
 
       <div class="schematic-wrap">
-        <svg viewBox="0 0 300 290" width="210" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">
+        <svg viewBox="0 0 300 285" width="210" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">
           <defs>
             <marker id="ledArrow" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
               <path d="M0,0 L6,3 L0,6 Z" fill="#f59e0b"/>
@@ -77,47 +77,46 @@
           <text id="sch-vs" x="100" y="30" text-anchor="middle" font-size="11" fill="#475569">Vs</text>
 
           <!-- Wire: Vs → resistor top -->
-          <line x1="100" y1="33" x2="100" y2="58" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="100" y1="33" x2="100" y2="55" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
 
-          <!-- Resistor (IEC rectangle) -->
-          <line x1="100" y1="58" x2="100" y2="65" stroke="#1e293b" stroke-width="1.8"/>
-          <rect x="66" y="65" width="68" height="28" rx="2" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
-          <line x1="100" y1="93" x2="100" y2="100" stroke="#1e293b" stroke-width="1.8"/>
-          <!-- R label (inside rect) -->
-          <text x="100" y="83" text-anchor="middle" font-size="12" font-weight="700" fill="#2563eb">R</text>
-          <!-- R value (right of rect, updates after calculation) -->
-          <text id="sch-r-val" x="144" y="83" font-size="10.5" fill="#64748b">—</text>
+          <!-- Resistor: portrait IEC rectangle (tall, wire enters top & exits bottom) -->
+          <rect x="86" y="55" width="28" height="56" rx="2" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+          <!-- R label centred in rect -->
+          <text x="100" y="88" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700" fill="#2563eb">R</text>
+          <!-- R value to the right, updates after calculation -->
+          <text id="sch-r-val" x="122" y="83" font-size="10.5" fill="#64748b">—</text>
 
-          <!-- Wire: resistor → LED -->
-          <line x1="100" y1="100" x2="100" y2="128" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+          <!-- Wire: resistor bottom → LED anode -->
+          <line x1="100" y1="111" x2="100" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
 
-          <!-- LED symbol (vertical, current ↓) -->
-          <!-- Triangle: base at y=128 (anode), apex at y=172 (cathode) -->
-          <polygon points="70,128 130,128 100,172" fill="#fef9c3" stroke="#1e293b" stroke-width="1.8"/>
-          <!-- Cathode bar -->
-          <line x1="70" y1="172" x2="130" y2="172" stroke="#1e293b" stroke-width="2.4" stroke-linecap="round"/>
-          <!-- LED label -->
-          <text x="55" y="148" text-anchor="end" font-size="11" fill="#64748b">LED</text>
-          <!-- Vf value (right side) -->
-          <text id="sch-vf-val" x="142" y="148" font-size="10.5" fill="#64748b">Vf</text>
-          <!-- ×n label (right side, below Vf) -->
-          <text id="sch-n-val" x="142" y="164" font-size="10.5" fill="#64748b"></text>
+          <!-- Current indicator arrow on this wire -->
+          <line x1="100" y1="114" x2="100" y2="124" stroke="#cbd5e1" stroke-width="1.2" marker-end="url(#curArrow)" stroke-dasharray="3,2"/>
+          <text x="88" y="120" text-anchor="end" font-size="9.5" fill="#94a3b8">If</text>
 
-          <!-- Light arrows (amber, upper-right from LED body) -->
-          <line x1="118" y1="138" x2="145" y2="111" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#ledArrow)"/>
-          <line x1="127" y1="130" x2="156" y2="101" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#ledArrow)"/>
+          <!-- LED symbol: downward-pointing triangle, current flows top → bottom -->
+          <!-- Anode (flat base) at y=130, cathode (apex) at y=174                 -->
+          <polygon points="70,130 130,130 100,174" fill="#fef9c3" stroke="#1e293b" stroke-width="1.8"/>
+          <!-- Cathode bar (horizontal line at apex) -->
+          <line x1="70" y1="174" x2="130" y2="174" stroke="#1e293b" stroke-width="2.4" stroke-linecap="round"/>
+
+          <!-- LED labels -->
+          <text x="55" y="150" text-anchor="end" font-size="11" fill="#64748b">LED</text>
+          <text id="sch-vf-val" x="140" y="148" font-size="10.5" fill="#64748b">Vf</text>
+          <text id="sch-n-val"  x="140" y="163" font-size="10.5" fill="#64748b"></text>
+
+          <!-- Light arrows: two short parallel arrows at 45° upper-right from body -->
+          <!-- Arrow 1 -->
+          <line x1="118" y1="140" x2="132" y2="126" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" marker-end="url(#ledArrow)"/>
+          <!-- Arrow 2 (offset perpendicular — 6px along the (1,1) direction) -->
+          <line x1="124" y1="146" x2="138" y2="132" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" marker-end="url(#ledArrow)"/>
 
           <!-- Wire: LED cathode → GND -->
-          <line x1="100" y1="172" x2="100" y2="218" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="100" y1="174" x2="100" y2="218" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
 
           <!-- GND symbol -->
           <line x1="72"  y1="218" x2="128" y2="218" stroke="#1e293b" stroke-width="2.2" stroke-linecap="round"/>
-          <line x1="80"  y1="228" x2="120" y2="228" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
-          <line x1="88"  y1="238" x2="112" y2="238" stroke="#1e293b" stroke-width="1.4" stroke-linecap="round"/>
-
-          <!-- Current direction indicator -->
-          <line x1="100" y1="105" x2="100" y2="118" stroke="#cbd5e1" stroke-width="1.2" marker-end="url(#curArrow)" stroke-dasharray="3,2"/>
-          <text x="88" y="112" text-anchor="end" font-size="9.5" fill="#94a3b8">If</text>
+          <line x1="80"  y1="227" x2="120" y2="227" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="88"  y1="236" x2="112" y2="236" stroke="#1e293b" stroke-width="1.4" stroke-linecap="round"/>
         </svg>
       </div>
 
