@@ -29,6 +29,7 @@
 <div class="layout">
   <aside class="sidebar" id="sidebar"></aside>
   <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
 
   <main class="main">
     <div class="page-title">🔌 AWG Wire Gauge Reference</div>
@@ -39,9 +40,9 @@
       <div class="form-grid" style="max-width:340px;margin-bottom:.5rem;">
         <div class="form-group">
           <label for="target-current">Required Current</label>
-          <div class="input-wrap">
+          <div class="unit-input" data-type="current" data-default="1">
             <input type="number" id="target-current" placeholder="e.g. 5" step="any" min="0" oninput="highlightForCurrent()">
-            <span class="input-unit">A</span>
+            <select id="target-current-unit" onchange="highlightForCurrent()"></select>
           </div>
         </div>
       </div>
@@ -117,7 +118,7 @@ const awgData = [
 ];
 
 function renderTable(data) {
-  const targetA = parseFloat(document.getElementById('target-current').value);
+  const targetA = unitVal('target-current');
   const body = document.getElementById('awg-body');
   if (!data.length) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:2rem;">No results</td></tr>'; return; }
 
@@ -158,7 +159,7 @@ function filterTable() {
 }
 
 function highlightForCurrent() {
-  const targetA = parseFloat(document.getElementById('target-current').value);
+  const targetA = unitVal('target-current');
   const hint = document.getElementById('current-hint');
   if (!isNaN(targetA) && targetA > 0) {
     const suitable = awgData.filter(d => d[5] >= targetA);
