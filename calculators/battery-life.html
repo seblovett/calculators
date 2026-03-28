@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battery Life Estimator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .batt-bar-wrap { background: #e2e8f0; border-radius: 999px; height: 12px; margin-top:6px; }
+    .batt-bar      { border-radius: 999px; height: 12px; transition: width .3s, background .3s; }
+    .mode-row { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:.85rem; }
+    @media(max-width:600px) { .mode-row { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html" class="active">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+
+  <main class="main">
+    <div class="page-title">🔋 Battery Life Estimator</div>
+    <div class="page-subtitle">Estimate runtime from battery capacity and load current. Supports duty-cycle mode for devices with active and sleep states.</div>
+
+    <!-- Simple mode -->
+    <div class="card">
+      <h2>Battery Parameters</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="cap">Capacity</label>
+          <div class="input-wrap">
+            <input type="number" id="cap" placeholder="e.g. 2000" step="any" min="0">
+            <span class="input-unit">mAh</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="dod">Depth of Discharge</label>
+          <div class="input-wrap">
+            <input type="number" id="dod" value="80" step="any" min="1" max="100">
+            <span class="input-unit">%</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="eff">System Efficiency</label>
+          <div class="input-wrap">
+            <input type="number" id="eff" value="90" step="any" min="1" max="100">
+            <span class="input-unit">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="info-box" style="margin-top:.85rem;">
+        💡 <strong>Depth of Discharge (DoD):</strong> Lithium cells are typically discharged to 80–90% DoD to maximise cycle life. Lead-acid: 50%. NiMH: 80–100%.<br>
+        <strong>System Efficiency:</strong> Accounts for DC-DC converter losses, self-discharge, and temperature derating. 85–95% is typical.
+      </div>
+    </div>
+
+    <!-- Simple load -->
+    <div class="card">
+      <h2>Load — Simple (Constant Current)</h2>
+      <div class="formula-block">Runtime = (Capacity × DoD% × Efficiency%) / I<sub>avg</sub></div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="iload">Average Load Current</label>
+          <div class="unit-input" data-type="current" data-default="1e-3">
+            <input type="number" id="iload" placeholder="e.g. 50" step="any" min="0">
+            <select></select>
+          </div>
+        </div>
+      </div>
+      <div class="error" id="err-simple">⚠ Please enter valid battery and current values.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcSimple()">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearSimple()">Clear</button>
+      </div>
+      <div class="results" id="res-simple">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-simple"></div>
+        <div style="margin-top:.85rem;">
+          <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:.3rem;">Battery Level</div>
+          <div class="batt-bar-wrap"><div class="batt-bar" id="batt-bar-simple" style="width:100%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Duty-cycle mode -->
+    <div class="card">
+      <h2>Load — Duty-Cycle Mode (Active + Sleep)</h2>
+      <div class="formula-block">I<sub>avg</sub> = I<sub>active</sub> × D + I<sub>sleep</sub> × (1 − D) &nbsp;|&nbsp; D = t<sub>active</sub> / (t<sub>active</sub> + t<sub>sleep</sub>)</div>
+      <div class="mode-row">
+        <div class="form-group">
+          <label for="i-active">Active Current</label>
+          <div class="unit-input" data-type="current" data-default="1e-3">
+            <input type="number" id="i-active" placeholder="e.g. 120" step="any" min="0">
+            <select></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="t-active">Active Time</label>
+          <div class="input-wrap">
+            <input type="number" id="t-active" placeholder="e.g. 10" step="any" min="0">
+            <span class="input-unit">ms</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Active Time Unit</label>
+          <select id="t-active-unit">
+            <option value="0.001">ms</option>
+            <option value="1">s</option>
+            <option value="60">min</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="i-sleep">Sleep Current</label>
+          <div class="unit-input" data-type="current" data-default="1e-6">
+            <input type="number" id="i-sleep" placeholder="e.g. 0.01" step="any" min="0">
+            <select></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="t-sleep">Sleep Time</label>
+          <div class="input-wrap">
+            <input type="number" id="t-sleep" placeholder="e.g. 990" step="any" min="0">
+            <span class="input-unit">ms</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Sleep Time Unit</label>
+          <select id="t-sleep-unit">
+            <option value="0.001">ms</option>
+            <option value="1">s</option>
+            <option value="60">min</option>
+          </select>
+        </div>
+      </div>
+      <div class="error" id="err-duty">⚠ Please enter valid values (all fields required).</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcDuty()">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearDuty()">Clear</button>
+      </div>
+      <div class="results" id="res-duty">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-duty"></div>
+        <div style="margin-top:.85rem;">
+          <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:.3rem;">Battery Level</div>
+          <div class="batt-bar-wrap"><div class="batt-bar" id="batt-bar-duty" style="width:100%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reference table -->
+    <div class="card">
+      <h2>Common Battery Capacities — Reference</h2>
+      <table class="data-table">
+        <thead>
+          <tr><th>Battery</th><th>Nominal Voltage</th><th>Typical Capacity</th><th>Chemistry</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>CR2032 coin cell</td><td>3.0 V</td><td>210–240 mAh</td><td>Li-MnO₂</td></tr>
+          <tr><td>AA alkaline</td><td>1.5 V</td><td>2400–3000 mAh</td><td>Alkaline</td></tr>
+          <tr><td>AA NiMH</td><td>1.2 V</td><td>1800–2800 mAh</td><td>NiMH</td></tr>
+          <tr><td>18650 Li-ion</td><td>3.7 V</td><td>2000–3600 mAh</td><td>Li-ion</td></tr>
+          <tr><td>21700 Li-ion</td><td>3.7 V</td><td>4000–5000 mAh</td><td>Li-ion</td></tr>
+          <tr><td>LiPo (typical wearable)</td><td>3.7 V</td><td>100–400 mAh</td><td>LiPo</td></tr>
+          <tr><td>LiPo (phone-size)</td><td>3.7 V</td><td>2500–5000 mAh</td><td>LiPo</td></tr>
+          <tr><td>9V alkaline</td><td>9.0 V</td><td>400–600 mAh</td><td>Alkaline</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function getBattParams() {
+  return {
+    cap: parseFloat(document.getElementById('cap').value),
+    dod: parseFloat(document.getElementById('dod').value) / 100,
+    eff: parseFloat(document.getElementById('eff').value) / 100,
+  };
+}
+
+function fmtRuntime(hours) {
+  if (hours < 1/60)   return (hours * 3600).toPrecision(3) + ' s';
+  if (hours < 1)      return (hours * 60).toPrecision(3) + ' min';
+  if (hours < 24)     return parseFloat(hours.toPrecision(4)) + ' h';
+  if (hours < 24*7)   return parseFloat((hours/24).toPrecision(4)) + ' days';
+  if (hours < 24*365) return parseFloat((hours/24/7).toPrecision(4)) + ' weeks';
+  return parseFloat((hours/24/365).toPrecision(4)) + ' years';
+}
+
+function battColor(pct) {
+  if (pct > 60) return '#16a34a';
+  if (pct > 30) return '#f59e0b';
+  return '#dc2626';
+}
+
+function calcSimple() {
+  const { cap, dod, eff } = getBattParams();
+  const iload = unitVal('iload') * 1000; // unitVal→A, formula needs mA
+  document.getElementById('err-simple').classList.remove('visible');
+
+  if ([cap,dod,eff,iload].some(v => isNaN(v) || v <= 0)) {
+    document.getElementById('err-simple').classList.add('visible'); return;
+  }
+
+  const usable = cap * dod * eff;
+  const hours = usable / iload;
+  const pct = Math.min(100, (usable / cap) * 100);
+
+  document.getElementById('grid-simple').innerHTML = [
+    ['Usable Capacity', parseFloat(usable.toPrecision(4)) + ' mAh'],
+    ['Runtime', fmtRuntime(hours)],
+    ['Runtime (hours)', parseFloat(hours.toPrecision(4)) + ' h'],
+    ['Avg Current', parseFloat(iload.toPrecision(4)) + ' mA'],
+    ['DoD × Efficiency', parseFloat((dod*eff*100).toPrecision(3)) + '%'],
+  ].map(([l,v]) => `<div class="result-item"><div class="result-label">${l}</div><div class="result-value">${v}</div></div>`).join('');
+
+  const bar = document.getElementById('batt-bar-simple');
+  bar.style.width = pct.toFixed(1) + '%';
+  bar.style.background = battColor(pct);
+  document.getElementById('res-simple').classList.add('visible');
+}
+
+function calcDuty() {
+  const { cap, dod, eff } = getBattParams();
+  const ia  = unitVal('i-active') * 1000; // unitVal→A, formula needs mA
+  const ta  = parseFloat(document.getElementById('t-active').value) * parseFloat(document.getElementById('t-active-unit').value);
+  const is  = unitVal('i-sleep') * 1000; // unitVal→A, formula needs mA
+  const ts  = parseFloat(document.getElementById('t-sleep').value) * parseFloat(document.getElementById('t-sleep-unit').value);
+  document.getElementById('err-duty').classList.remove('visible');
+
+  if ([cap,dod,eff,ia,ta,is,ts].some(v => isNaN(v) || v < 0) || ta <= 0) {
+    document.getElementById('err-duty').classList.add('visible'); return;
+  }
+
+  const period = ta + ts;
+  const duty   = ta / period;
+  const iavg   = ia * duty + is * (1 - duty);
+  const usable = cap * dod * eff;
+  const hours  = usable / iavg;
+  const pct    = Math.min(100, (usable / cap) * 100);
+
+  document.getElementById('grid-duty').innerHTML = [
+    ['Duty Cycle', parseFloat((duty*100).toPrecision(3)) + '%'],
+    ['Avg Current (I<sub>avg</sub>)', parseFloat(iavg.toPrecision(4)) + ' mA'],
+    ['Usable Capacity', parseFloat(usable.toPrecision(4)) + ' mAh'],
+    ['Runtime', fmtRuntime(hours)],
+    ['Runtime (hours)', parseFloat(hours.toPrecision(4)) + ' h'],
+    ['Cycle Period', formatPeriod(period)],
+  ].map(([l,v]) => `<div class="result-item"><div class="result-label">${l}</div><div class="result-value">${v}</div></div>`).join('');
+
+  const bar = document.getElementById('batt-bar-duty');
+  bar.style.width = pct.toFixed(1) + '%';
+  bar.style.background = battColor(pct);
+  document.getElementById('res-duty').classList.add('visible');
+}
+
+function formatPeriod(s) {
+  if (s < 1)    return parseFloat((s*1000).toPrecision(3)) + ' ms';
+  if (s < 60)   return parseFloat(s.toPrecision(3)) + ' s';
+  if (s < 3600) return parseFloat((s/60).toPrecision(3)) + ' min';
+  return parseFloat((s/3600).toPrecision(3)) + ' h';
+}
+
+function clearSimple() {
+  document.getElementById('iload').value = '';
+  document.getElementById('res-simple').classList.remove('visible');
+  document.getElementById('err-simple').classList.remove('visible');
+}
+
+function clearDuty() {
+  ['i-active','t-active','i-sleep','t-sleep'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('res-duty').classList.remove('visible');
+  document.getElementById('err-duty').classList.remove('visible');
+}
+</script>
+</body>
+</html>

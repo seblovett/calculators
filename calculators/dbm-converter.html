@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dBm / Watts / Volts Converter — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .conv-section { border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem; }
+    .conv-section:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+    .ref-table td:first-child { font-weight: 600; color: var(--blue); }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html">Electrical</a>
+    <a href="unit-converter.html" class="active">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+
+  <main class="main">
+    <div class="page-title">📶 dBm / Watts / Volts Converter</div>
+    <div class="page-subtitle">Convert between dBm, milliwatts, watts, and RMS voltage across standard RF impedances.</div>
+
+    <!-- Main converter -->
+    <div class="card">
+      <h2>Converter</h2>
+
+      <div class="form-grid" style="margin-bottom:.85rem;">
+        <div class="form-group">
+          <label>Reference Impedance (Z)</label>
+          <select id="impedance" onchange="autoConvert()">
+            <option value="50">50 Ω (RF / coaxial)</option>
+            <option value="75">75 Ω (cable TV / video)</option>
+            <option value="600">600 Ω (audio / telecom)</option>
+            <option value="8">8 Ω (audio speaker)</option>
+            <option value="custom">Custom…</option>
+          </select>
+        </div>
+        <div class="form-group" id="custom-z-wrap" style="display:none;">
+          <label for="custom-z">Custom Impedance</label>
+          <div class="unit-input" data-type="resistance" data-default="1">
+            <input type="number" id="custom-z" placeholder="e.g. 300" step="any" min="0" oninput="autoConvert()">
+            <select></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- dBm → everything -->
+      <div class="conv-section">
+        <h2 style="margin-bottom:.75rem;">From dBm</h2>
+        <div class="formula-block">P<sub>mW</sub> = 10<sup>dBm/10</sup> &nbsp;|&nbsp; V<sub>rms</sub> = √(P<sub>W</sub> × Z)</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="in-dbm">Power Level</label>
+            <div class="input-wrap">
+              <input type="number" id="in-dbm" placeholder="e.g. 0" step="any" oninput="convFromDBm()">
+              <span class="input-unit">dBm</span>
+            </div>
+          </div>
+        </div>
+        <div class="results" id="res-dbm" style="margin-top:.85rem;">
+          <h3>Results</h3>
+          <div class="result-grid" id="grid-dbm"></div>
+        </div>
+      </div>
+
+      <!-- Watts → everything -->
+      <div class="conv-section">
+        <h2 style="margin-bottom:.75rem;">From Power</h2>
+        <div class="formula-block">dBm = 10 × log₁₀(P<sub>mW</sub>) &nbsp;|&nbsp; V<sub>rms</sub> = √(P<sub>W</sub> × Z)</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="in-pwr">Power</label>
+            <div class="unit-input" data-type="power" data-default="1e-3">
+              <input type="number" id="in-pwr" placeholder="e.g. 1" step="any" min="0" oninput="convFromPwr()">
+              <select onchange="convFromPwr()"></select>
+            </div>
+          </div>
+
+        </div>
+        <div class="results" id="res-pwr" style="margin-top:.85rem;">
+          <h3>Results</h3>
+          <div class="result-grid" id="grid-pwr"></div>
+        </div>
+      </div>
+
+      <!-- Volts → everything -->
+      <div class="conv-section">
+        <h2 style="margin-bottom:.75rem;">From Voltage</h2>
+        <div class="formula-block">P<sub>W</sub> = V<sub>rms</sub>² / Z &nbsp;|&nbsp; dBm = 10 × log₁₀(P<sub>mW</sub>)</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="in-v">RMS Voltage</label>
+            <div class="unit-input" data-type="voltage" data-default="1">
+              <input type="number" id="in-v" placeholder="e.g. 0.224" step="any" min="0" oninput="convFromV()">
+              <select onchange="convFromV()"></select>
+            </div>
+          </div>
+        </div>
+        <div class="results" id="res-v" style="margin-top:.85rem;">
+          <h3>Results</h3>
+          <div class="result-grid" id="grid-v"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- dB gain/loss -->
+    <div class="card">
+      <h2>Power Gain / Loss</h2>
+      <div class="formula-block">P<sub>out</sub>(dBm) = P<sub>in</sub>(dBm) + Gain(dB)</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="gl-pin">Input Power</label>
+          <div class="input-wrap">
+            <input type="number" id="gl-pin" placeholder="e.g. −10" step="any" oninput="calcGainLoss()">
+            <span class="input-unit">dBm</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="gl-gain">Gain / Loss</label>
+          <div class="input-wrap">
+            <input type="number" id="gl-gain" placeholder="e.g. 20" step="any" oninput="calcGainLoss()">
+            <span class="input-unit">dB</span>
+          </div>
+        </div>
+      </div>
+      <div class="results" id="res-gl" style="margin-top:.85rem;">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-gl"></div>
+      </div>
+    </div>
+
+    <!-- Reference table -->
+    <div class="card">
+      <h2>Common dBm Reference Values (50 Ω)</h2>
+      <table class="data-table ref-table">
+        <thead>
+          <tr><th>dBm</th><th>Power</th><th>V<sub>rms</sub> (50 Ω)</th><th>Typical Use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>+43 dBm</td><td>20 W</td><td>31.6 V</td><td>Mobile base station</td></tr>
+          <tr><td>+30 dBm</td><td>1 W</td><td>7.07 V</td><td>Handheld radio max</td></tr>
+          <tr><td>+20 dBm</td><td>100 mW</td><td>2.24 V</td><td>Wi-Fi access point</td></tr>
+          <tr><td>+10 dBm</td><td>10 mW</td><td>707 mV</td><td>Bluetooth Class 1</td></tr>
+          <tr><td>0 dBm</td><td>1 mW</td><td>224 mV</td><td>Reference level</td></tr>
+          <tr><td>−10 dBm</td><td>100 µW</td><td>70.7 mV</td><td>Strong RF signal</td></tr>
+          <tr><td>−30 dBm</td><td>1 µW</td><td>7.07 mV</td><td>Typical received signal</td></tr>
+          <tr><td>−60 dBm</td><td>1 nW</td><td>224 µV</td><td>Weak signal</td></tr>
+          <tr><td>−100 dBm</td><td>0.1 fW</td><td>2.24 µV</td><td>Receiver noise floor</td></tr>
+          <tr><td>−174 dBm/Hz</td><td>kTB</td><td>—</td><td>Thermal noise floor (290 K)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function getZ() {
+  const sel = document.getElementById('impedance').value;
+  if (sel === 'custom') return unitVal('custom-z');
+  return parseFloat(sel);
+}
+
+document.getElementById('impedance').addEventListener('change', function() {
+  document.getElementById('custom-z-wrap').style.display = (this.value === 'custom') ? '' : 'none';
+});
+
+function fmtPwr(w) {
+  const aw = Math.abs(w);
+  if (aw === 0) return '0 W';
+  if (aw < 1e-12) return parseFloat((w*1e15).toPrecision(4)) + ' fW';
+  if (aw < 1e-9)  return parseFloat((w*1e12).toPrecision(4)) + ' pW';
+  if (aw < 1e-6)  return parseFloat((w*1e9).toPrecision(4)) + ' nW';
+  if (aw < 1e-3)  return parseFloat((w*1e6).toPrecision(4)) + ' µW';
+  if (aw < 1)     return parseFloat((w*1e3).toPrecision(4)) + ' mW';
+  if (aw < 1e3)   return parseFloat(w.toPrecision(4)) + ' W';
+  return parseFloat((w/1e3).toPrecision(4)) + ' kW';
+}
+
+function fmtV(v) {
+  const av = Math.abs(v);
+  if (av === 0) return '0 V';
+  if (av < 1e-6) return parseFloat((v*1e9).toPrecision(4)) + ' nV';
+  if (av < 1e-3) return parseFloat((v*1e6).toPrecision(4)) + ' µV';
+  if (av < 1)    return parseFloat((v*1e3).toPrecision(4)) + ' mV';
+  return parseFloat(v.toPrecision(4)) + ' V';
+}
+
+function fmtDBm(d) { return parseFloat(d.toPrecision(5)) + ' dBm'; }
+
+function renderGrid(gridId, resId, items) {
+  document.getElementById(gridId).innerHTML = items.map(([l,v]) =>
+    `<div class="result-item"><div class="result-label">${l}</div><div class="result-value">${v}</div></div>`
+  ).join('');
+  document.getElementById(resId).classList.add('visible');
+}
+
+function convFromDBm() {
+  const dbm = parseFloat(document.getElementById('in-dbm').value);
+  const Z = getZ();
+  if (isNaN(dbm) || isNaN(Z) || Z <= 0) { document.getElementById('res-dbm').classList.remove('visible'); return; }
+  const mw = Math.pow(10, dbm / 10);
+  const w  = mw / 1000;
+  const vp = Math.sqrt(w * Z);
+  const vpp = vp * 2 * Math.sqrt(2);
+  renderGrid('grid-dbm','res-dbm', [
+    ['Power (mW)', parseFloat(mw.toPrecision(4)) + ' mW'],
+    ['Power (W)', fmtPwr(w)],
+    ['V<sub>rms</sub>', fmtV(vp)],
+    ['V<sub>peak</sub>', fmtV(vp * Math.SQRT2)],
+    ['V<sub>pp</sub>', fmtV(vpp)],
+    ['Impedance', Z + ' Ω'],
+  ]);
+}
+
+function convFromPwr() {
+  const pRaw = 1; // unused — unitVal reads both value and unit
+  const unit = 1;   // unused
+  const Z = getZ();
+  if (isNaN(Z) || Z <= 0) { document.getElementById('res-pwr').classList.remove('visible'); return; }
+  const w = unitVal('in-pwr');
+  if (isNaN(w) || w <= 0) { document.getElementById('res-pwr').classList.remove('visible'); return; }
+  const mw = w * 1000;
+  const dbm = 10 * Math.log10(mw);
+  const vrms = Math.sqrt(w * Z);
+  renderGrid('grid-pwr','res-pwr', [
+    ['dBm', fmtDBm(dbm)],
+    ['Power (mW)', parseFloat(mw.toPrecision(4)) + ' mW'],
+    ['Power (W)', fmtPwr(w)],
+    ['V<sub>rms</sub>', fmtV(vrms)],
+    ['V<sub>peak</sub>', fmtV(vrms * Math.SQRT2)],
+    ['Impedance', Z + ' Ω'],
+  ]);
+}
+
+function convFromV() {
+  const vrms = unitVal('in-v');
+  const Z = getZ();
+  if (isNaN(vrms) || vrms < 0 || isNaN(Z) || Z <= 0) { document.getElementById('res-v').classList.remove('visible'); return; }
+  if (vrms === 0) { document.getElementById('res-v').classList.remove('visible'); return; }
+  const w = vrms * vrms / Z;
+  const mw = w * 1000;
+  const dbm = 10 * Math.log10(mw);
+  renderGrid('grid-v','res-v', [
+    ['dBm', fmtDBm(dbm)],
+    ['Power (mW)', parseFloat(mw.toPrecision(4)) + ' mW'],
+    ['Power (W)', fmtPwr(w)],
+    ['V<sub>peak</sub>', fmtV(vrms * Math.SQRT2)],
+    ['V<sub>pp</sub>', fmtV(vrms * 2 * Math.SQRT2)],
+    ['Impedance', Z + ' Ω'],
+  ]);
+}
+
+function calcGainLoss() {
+  const pin  = parseFloat(document.getElementById('gl-pin').value);
+  const gain = parseFloat(document.getElementById('gl-gain').value);
+  if (isNaN(pin) || isNaN(gain)) { document.getElementById('res-gl').classList.remove('visible'); return; }
+  const Z = getZ();
+  const pout = pin + gain;
+  const mw = Math.pow(10, pout / 10);
+  const vrms = isNaN(Z) || Z <= 0 ? null : Math.sqrt(mw / 1000 * Z);
+  const items = [
+    ['P<sub>out</sub>', fmtDBm(pout)],
+    ['P<sub>out</sub> (mW)', parseFloat(mw.toPrecision(4)) + ' mW'],
+    ['P<sub>out</sub> (W)', fmtPwr(mw/1000)],
+    ['Gain / Loss', (gain >= 0 ? '+' : '') + gain + ' dB'],
+  ];
+  if (vrms !== null) items.push(['V<sub>rms</sub> out', fmtV(vrms)]);
+  renderGrid('grid-gl','res-gl', items);
+}
+
+function autoConvert() {
+  convFromDBm(); convFromPwr(); convFromV(); calcGainLoss();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ohm's Law Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html" class="active">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="page-title">🔋 Ohm's Law Calculator</div>
+    <div class="page-subtitle">Enter any two values to solve for the remaining two. V = IR &nbsp;|&nbsp; P = IV = V²/R = I²R</div>
+
+    <div class="card">
+      <h2>Enter Two Known Values</h2>
+      <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem;">Leave the values you want to calculate blank (or zero).</p>
+
+      <div class="formula-block">
+        V = I × R &nbsp;&nbsp;|&nbsp;&nbsp; P = V × I &nbsp;&nbsp;|&nbsp;&nbsp; P = I² × R &nbsp;&nbsp;|&nbsp;&nbsp; P = V² / R
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="v">Voltage (V)</label>
+          <div class="unit-input" data-type="voltage" data-default="1">
+            <input type="number" id="v" placeholder="e.g. 12" step="any" min="0">
+            <select id="v-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="i">Current (I)</label>
+          <div class="unit-input" data-type="current" data-default="1">
+            <input type="number" id="i" placeholder="e.g. 0.5" step="any" min="0">
+            <select id="i-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="r">Resistance (R)</label>
+          <div class="unit-input" data-type="resistance" data-default="1">
+            <input type="number" id="r" placeholder="e.g. 24" step="any" min="0">
+            <select id="r-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="p">Power (P)</label>
+          <div class="unit-input" data-type="power" data-default="1">
+            <input type="number" id="p" placeholder="e.g. 6" step="any" min="0">
+            <select id="p-unit"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="error" id="err">⚠ Please enter exactly two values.</div>
+
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calculate()">Calculate</button>
+        <button class="btn btn-secondary" onclick="reset()">Clear</button>
+      </div>
+
+      <div class="results" id="results">
+        <h3>Results</h3>
+        <div class="result-grid" id="result-grid"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Quick Reference</h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Find</th><th>Known</th><th>Formula</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Voltage (V)</td><td>I, R</td><td>V = I × R</td></tr>
+          <tr><td>Voltage (V)</td><td>P, I</td><td>V = P / I</td></tr>
+          <tr><td>Voltage (V)</td><td>P, R</td><td>V = √(P × R)</td></tr>
+          <tr><td>Current (I)</td><td>V, R</td><td>I = V / R</td></tr>
+          <tr><td>Current (I)</td><td>P, V</td><td>I = P / V</td></tr>
+          <tr><td>Current (I)</td><td>P, R</td><td>I = √(P / R)</td></tr>
+          <tr><td>Resistance (R)</td><td>V, I</td><td>R = V / I</td></tr>
+          <tr><td>Resistance (R)</td><td>V, P</td><td>R = V² / P</td></tr>
+          <tr><td>Resistance (R)</td><td>P, I</td><td>R = P / I²</td></tr>
+          <tr><td>Power (P)</td><td>V, I</td><td>P = V × I</td></tr>
+          <tr><td>Power (P)</td><td>V, R</td><td>P = V² / R</td></tr>
+          <tr><td>Power (P)</td><td>I, R</td><td>P = I² × R</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+function fmt(n) {
+  if (n === null || isNaN(n)) return '—';
+  if (Math.abs(n) >= 1e6)  return (n/1e6).toPrecision(4) + ' M';
+  if (Math.abs(n) >= 1e3)  return (n/1e3).toPrecision(4) + ' k';
+  if (Math.abs(n) < 1e-3 && n !== 0) return (n*1e3).toPrecision(4) + ' m';
+  return parseFloat(n.toPrecision(5)).toString();
+}
+
+function val(id) {
+  const v = unitVal(id);
+  return isNaN(v) || v === 0 ? null : v;
+}
+
+function calculate() {
+  const err = document.getElementById('err');
+  err.classList.remove('visible');
+  const results = document.getElementById('results');
+
+  let V = val('v'), I = val('i'), R = val('r'), P = val('p');
+  const known = [V,I,R,P].filter(x => x !== null).length;
+
+  if (known < 2) { err.classList.add('visible'); results.classList.remove('visible'); return; }
+
+  // Solve using any two knowns
+  if (V !== null && I !== null) { R = V/I; P = V*I; }
+  else if (V !== null && R !== null) { I = V/R; P = V*V/R; }
+  else if (V !== null && P !== null) { I = P/V; R = V*V/P; }
+  else if (I !== null && R !== null) { V = I*R; P = I*I*R; }
+  else if (I !== null && P !== null) { V = P/I; R = P/(I*I); }
+  else if (R !== null && P !== null) { V = Math.sqrt(P*R); I = Math.sqrt(P/R); }
+
+  const grid = document.getElementById('result-grid');
+  grid.innerHTML = `
+    <div class="result-item"><div class="result-label">Voltage</div><div class="result-value">${fmt(V)}<span class="unit">V</span></div></div>
+    <div class="result-item"><div class="result-label">Current</div><div class="result-value">${fmt(I)}<span class="unit">A</span></div></div>
+    <div class="result-item"><div class="result-label">Resistance</div><div class="result-value">${fmt(R)}<span class="unit">Ω</span></div></div>
+    <div class="result-item"><div class="result-label">Power</div><div class="result-value">${fmt(P)}<span class="unit">W</span></div></div>
+  `;
+  results.classList.add('visible');
+}
+
+function reset() {
+  ['v','i','r','p'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('results').classList.remove('visible');
+  document.getElementById('err').classList.remove('visible');
+}
+
+document.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); }));
+</script>
+</body>
+</html>

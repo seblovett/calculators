@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Potential Divider Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .mode-tabs { display:flex; gap:.5rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+    .mode-btn {
+      padding:.45rem 1rem; border-radius:var(--radius); font-size:.875rem; font-weight:600;
+      border:1px solid var(--border); background:var(--white); cursor:pointer; transition:.12s;
+    }
+    .mode-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+    .schematic-wrap {
+      background:#f8fafc; border:1px solid var(--border);
+      border-radius:var(--radius); padding:1rem 1.25rem;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
+    }
+    .schematic-wrap svg { overflow:visible; }
+    .visual-row { display:flex; align-items:flex-start; gap:1.25rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html" class="active">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+
+  <main class="main">
+    <div class="page-title">⚖️ Potential Divider Calculator</div>
+    <div class="page-subtitle">Calculate unloaded and loaded output voltage, loading error, and design for a target output — including the effect of a load resistance.</div>
+
+    <div class="mode-tabs">
+      <button class="mode-btn active" id="tab-loaded" onclick="setMode('loaded')">Loaded divider — find Vout</button>
+      <button class="mode-btn" id="tab-design" onclick="setMode('design')">Design — find R1 &amp; R2</button>
+      <button class="mode-btn" id="tab-current" onclick="setMode('current')">Current sensing — find Vshunt</button>
+    </div>
+
+    <!-- ====== LOADED DIVIDER ====== -->
+    <div id="panel-loaded">
+      <div class="card">
+        <h2>Loaded Potential Divider</h2>
+        <div class="visual-row">
+          <div class="schematic-wrap">
+            <svg viewBox="0 0 218 262" width="190" xmlns="http://www.w3.org/2000/svg"
+                 aria-label="Loaded potential divider schematic" font-family="system-ui,sans-serif">
+
+              <!-- ── Vin label & wire ── -->
+              <text x="80" y="16" text-anchor="middle" font-size="13" font-weight="700" fill="#2563eb">Vin</text>
+              <line x1="80" y1="20" x2="80" y2="44" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+              <!-- ── R1: IEC rectangle, portrait (30 × 55) ── -->
+              <rect x="65" y="44" width="30" height="55" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+              <text x="104" y="75" font-size="12" font-weight="600" fill="#1e293b">R1</text>
+
+              <!-- ── Wire R1 bottom → main junction ── -->
+              <line x1="80" y1="99" x2="80" y2="124" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+              <!-- ── Main junction node ── -->
+              <circle cx="80" cy="124" r="4" fill="#1e293b"/>
+
+              <!-- ── Horizontal wire: junction → Vout terminal (passes through RL branch point) ── -->
+              <line x1="80" y1="124" x2="190" y2="124" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+              <!-- ── T-junction where RL branches off ── -->
+              <circle cx="145" cy="124" r="4" fill="#1e293b"/>
+
+              <!-- ── Vout label ── -->
+              <text x="196" y="129" font-size="13" font-weight="700" fill="#2563eb">Vout</text>
+
+              <!-- ── Wire main junction → R2 top ── -->
+              <line x1="80" y1="124" x2="80" y2="146" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+              <!-- ── R2: IEC rectangle, portrait (30 × 55) ── -->
+              <rect x="65" y="146" width="30" height="55" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+              <text x="104" y="177" font-size="12" font-weight="600" fill="#1e293b">R2</text>
+
+              <!-- ── Wire RL T-junction → RL top ── -->
+              <line x1="145" y1="124" x2="145" y2="146" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+              <!-- ── RL: IEC rectangle, portrait (30 × 55) ── -->
+              <rect x="130" y="146" width="30" height="55" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+              <text x="169" y="177" font-size="12" font-weight="600" fill="#1e293b">RL</text>
+
+              <!-- ── Wire R2 bottom → bottom rail ── -->
+              <line x1="80" y1="201" x2="80" y2="218" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+              <!-- ── Wire RL bottom → bottom rail ── -->
+              <line x1="145" y1="201" x2="145" y2="218" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+              <!-- ── Bottom rail ── -->
+              <line x1="80" y1="218" x2="145" y2="218" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+              <!-- ── GND junction on bottom rail ── -->
+              <circle cx="112" cy="218" r="4" fill="#1e293b"/>
+
+              <!-- ── GND wire ── -->
+              <line x1="112" y1="218" x2="112" y2="232" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+              <!-- ── GND symbol (three tapering bars) ── -->
+              <line x1="92"  y1="232" x2="132" y2="232" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
+              <line x1="99"  y1="240" x2="125" y2="240" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
+              <line x1="106" y1="248" x2="118" y2="248" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
+
+            </svg>
+          </div>
+          <div style="font-size:.83rem;color:var(--text-muted);line-height:1.75;padding-top:.25rem;">
+            <strong>Unloaded:</strong> Vout = Vin × R2 / (R1 + R2)<br>
+            <strong>Loaded (RL ∥ R2):</strong><br>
+            R2_eff = R2 × RL / (R2 + RL)<br>
+            Vout = Vin × R2_eff / (R1 + R2_eff)<br><br>
+            Loading error = (Vout_ul − Vout_l) / Vout_ul × 100%
+          </div>
+        </div>
+
+        <div class="formula-block">
+          Vout = Vin × (R2 ∥ RL) / [R1 + (R2 ∥ RL)]
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group"><label for="l-vin">Input Voltage (Vin)</label>
+            <div class="unit-input" data-type="voltage" data-default="1"><input type="number" id="l-vin" placeholder="e.g. 12" step="any" min="0"><select id="l-vin-unit"></select></div>
+          </div>
+          <div class="form-group"><label for="l-r1">R1</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3"><input type="number" id="l-r1" placeholder="e.g. 10000" step="any" min="0"><select id="l-r1-unit"></select></div>
+          </div>
+          <div class="form-group"><label for="l-r2">R2</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3"><input type="number" id="l-r2" placeholder="e.g. 4700" step="any" min="0"><select id="l-r2-unit"></select></div>
+          </div>
+          <div class="form-group"><label for="l-rl">Load Resistance (RL)</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3"><input type="number" id="l-rl" placeholder="e.g. 10000 (optional)" step="any" min="0"><select id="l-rl-unit"></select></div>
+          </div>
+        </div>
+        <div class="error" id="err-loaded">⚠ Please enter Vin, R1, and R2.</div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calcLoaded()">Calculate</button>
+          <button class="btn btn-secondary" onclick="clearPanel('loaded')">Clear</button>
+        </div>
+        <div class="results" id="res-loaded">
+          <h3>Results</h3>
+          <div class="result-grid" id="grid-loaded"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== DESIGN MODE ====== -->
+    <div id="panel-design" style="display:none;">
+      <div class="card">
+        <h2>Design a Potential Divider</h2>
+        <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem;">
+          Given Vin, a target Vout, and either R1 or R2, calculate the missing resistor. Optionally specify a load for a loaded design.
+        </p>
+        <div class="formula-block">
+          R2 = R1 × Vout / (Vin − Vout) &nbsp;|&nbsp; R1 = R2 × (Vin − Vout) / Vout
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label for="d-vin">Input Voltage (Vin)</label>
+            <div class="unit-input" data-type="voltage" data-default="1"><input type="number" id="d-vin" placeholder="e.g. 12" step="any" min="0"><select id="d-vin-unit"></select></div>
+          </div>
+          <div class="form-group"><label for="d-vout">Target Vout</label>
+            <div class="unit-input" data-type="voltage" data-default="1"><input type="number" id="d-vout" placeholder="e.g. 3.3" step="any" min="0"><select id="d-vout-unit"></select></div>
+          </div>
+          <div class="form-group"><label for="d-r1">R1 (leave blank to solve)</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3"><input type="number" id="d-r1" placeholder="e.g. 10000" step="any" min="0"><select id="d-r1-unit"></select></div>
+          </div>
+          <div class="form-group"><label for="d-r2">R2 (leave blank to solve)</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3"><input type="number" id="d-r2" placeholder="e.g. 4700" step="any" min="0"><select id="d-r2-unit"></select></div>
+          </div>
+          <div class="form-group"><label for="d-rl">Load Resistance (RL, optional)</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3"><input type="number" id="d-rl" placeholder="e.g. 10000" step="any" min="0"><select id="d-rl-unit"></select></div>
+          </div>
+        </div>
+        <div class="error" id="err-design">⚠ Enter Vin, Vout, and exactly one of R1 or R2.</div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calcDesign()">Calculate</button>
+          <button class="btn btn-secondary" onclick="clearPanel('design')">Clear</button>
+        </div>
+        <div class="results" id="res-design">
+          <h3>Results</h3>
+          <div class="result-grid" id="grid-design"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== CURRENT SENSING ====== -->
+    <div id="panel-current" style="display:none;">
+      <div class="card">
+        <h2>Current Sensing — Shunt Resistor</h2>
+        <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem;">
+          Calculate the voltage developed across a shunt (sense) resistor, or find the shunt value needed for a given ADC input range.
+        </p>
+        <div class="formula-block">
+          Vshunt = I × Rshunt &nbsp;|&nbsp; Rshunt = Vfull_scale / I_max
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label for="cs-i">Current (I)</label>
+            <div class="unit-input" data-type="current" data-default="1"><input type="number" id="cs-i" placeholder="e.g. 5" step="any" min="0"><select id="cs-i-unit"></select></div>
+          </div>
+          <div class="form-group"><label for="cs-rsh">Shunt Resistance</label>
+            <div class="unit-input" data-type="resistance" data-default="1e-3"><input type="number" id="cs-rsh" placeholder="e.g. 0.01" step="any" min="0"><select id="cs-rsh-unit"></select></div>
+          </div>
+          <div class="form-group"><label for="cs-imax">Max Current (for design)</label>
+            <div class="unit-input" data-type="current" data-default="1"><input type="number" id="cs-imax" placeholder="e.g. 10" step="any" min="0"><select id="cs-imax-unit"></select></div>
+          </div>
+          <div class="form-group"><label for="cs-vfs">ADC Full-Scale (for design)</label>
+            <div class="unit-input" data-type="voltage" data-default="1"><input type="number" id="cs-vfs" placeholder="e.g. 3.3" step="any" min="0"><select id="cs-vfs-unit"></select></div>
+          </div>
+        </div>
+        <div class="error" id="err-current">⚠ Provide I and Rshunt, or Imax and ADC full-scale.</div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calcCurrent()">Calculate</button>
+          <button class="btn btn-secondary" onclick="clearPanel('current')">Clear</button>
+        </div>
+        <div class="results" id="res-current">
+          <h3>Results</h3>
+          <div class="result-grid" id="grid-current"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function setMode(mode) {
+  ['loaded','design','current'].forEach(m => {
+    document.getElementById('panel-'+m).style.display = m===mode ? '' : 'none';
+    document.getElementById('tab-'+m).className = 'mode-btn' + (m===mode?' active':'');
+  });
+}
+
+function fmtR(r) {
+  if (r>=1e6) return (r/1e6).toPrecision(4)+' MΩ';
+  if (r>=1e3) return (r/1e3).toPrecision(4)+' kΩ';
+  return parseFloat(r.toPrecision(4))+' Ω';
+}
+function fmtV(v) { return parseFloat(v.toPrecision(5))+' V'; }
+
+function showResults(gridId, resId, items) {
+  document.getElementById(gridId).innerHTML = items.map(([lbl, val]) =>
+    `<div class="result-item"><div class="result-label">${lbl}</div><div class="result-value">${val}</div></div>`
+  ).join('');
+  document.getElementById(resId).classList.add('visible');
+}
+
+function calcLoaded() {
+  const vin = unitVal('l-vin');
+  const r1  = unitVal('l-r1');
+  const r2  = unitVal('l-r2');
+  const rl  = unitVal('l-rl');
+  const err = document.getElementById('err-loaded');
+  err.classList.remove('visible');
+  document.getElementById('res-loaded').classList.remove('visible');
+
+  if ([vin,r1,r2].some(v => isNaN(v)||v<=0)) { err.classList.add('visible'); return; }
+
+  const vout_ul = vin * r2 / (r1 + r2);
+  const items = [
+    ['Vout (unloaded)', fmtV(vout_ul)],
+    ['Ratio (unloaded)', parseFloat((r2/(r1+r2)).toPrecision(4)).toString()],
+    ['Quiescent current', parseFloat((vin/(r1+r2)*1000).toPrecision(4))+' mA'],
+    ['Quiescent power', parseFloat((vin*vin/(r1+r2)*1000).toPrecision(4))+' mW'],
+  ];
+
+  if (!isNaN(rl) && rl > 0) {
+    const r2_eff = (r2 * rl) / (r2 + rl);
+    const vout_l = vin * r2_eff / (r1 + r2_eff);
+    const err_pct = (vout_ul - vout_l) / vout_ul * 100;
+    const i_total = vin / (r1 + r2_eff);
+    items.push(
+      ['R2 ∥ RL (effective)', fmtR(r2_eff)],
+      ['Vout (loaded)', fmtV(vout_l)],
+      ['Loading error', parseFloat(err_pct.toPrecision(3))+'%'],
+      ['Total supply current', parseFloat((i_total*1000).toPrecision(4))+' mA'],
+    );
+  }
+  showResults('grid-loaded','res-loaded', items);
+}
+
+function calcDesign() {
+  const vin  = unitVal('d-vin');
+  const vout = unitVal('d-vout');
+  const r1in = unitVal('d-r1');
+  const r2in = unitVal('d-r2');
+  const rl   = unitVal('d-rl');
+  const err  = document.getElementById('err-design');
+  err.classList.remove('visible');
+  document.getElementById('res-design').classList.remove('visible');
+
+  if (isNaN(vin)||isNaN(vout)||vout>=vin||vout<=0) { err.classList.add('visible'); return; }
+
+  let r1, r2;
+  if (!isNaN(r1in) && isNaN(r2in)) {
+    r1 = r1in;
+    r2 = r1 * vout / (vin - vout);
+  } else if (!isNaN(r2in) && isNaN(r1in)) {
+    r2 = r2in;
+    r1 = r2 * (vin - vout) / vout;
+  } else { err.classList.add('visible'); return; }
+
+  const vout_check = vin * r2 / (r1 + r2);
+  const items = [
+    ['R1', fmtR(r1)],
+    ['R2', fmtR(r2)],
+    ['Vout (unloaded)', fmtV(vout_check)],
+    ['Quiescent current', parseFloat((vin/(r1+r2)*1000).toPrecision(4))+' mA'],
+  ];
+
+  if (!isNaN(rl) && rl > 0) {
+    const r2_eff = r2 * rl / (r2 + rl);
+    const vout_l = vin * r2_eff / (r1 + r2_eff);
+    const err_pct = (vout_check - vout_l) / vout_check * 100;
+    items.push(
+      ['Vout (with load)', fmtV(vout_l)],
+      ['Loading error', parseFloat(err_pct.toPrecision(3))+'%'],
+    );
+  }
+  showResults('grid-design','res-design', items);
+}
+
+function calcCurrent() {
+  const I    = unitVal('cs-i');
+  const Rsh  = unitVal('cs-rsh');
+  const Imax = unitVal('cs-imax');
+  const Vfs  = unitVal('cs-vfs');
+  const err  = document.getElementById('err-current');
+  err.classList.remove('visible');
+  document.getElementById('res-current').classList.remove('visible');
+
+  const items = [];
+
+  if (!isNaN(I) && !isNaN(Rsh) && I>0 && Rsh>0) {
+    const Vsh = I * Rsh;
+    const P   = I * I * Rsh;
+    items.push(
+      ['Vshunt', parseFloat((Vsh*1000).toPrecision(4))+' mV'],
+      ['Power in shunt', parseFloat((P*1000).toPrecision(4))+' mW'],
+    );
+  }
+
+  if (!isNaN(Imax) && !isNaN(Vfs) && Imax>0 && Vfs>0) {
+    const Rdesign = Vfs / Imax;
+    const P = Imax * Imax * Rdesign;
+    items.push(
+      ['Shunt for full-scale', fmtR(Rdesign)],
+      ['Power at Imax', parseFloat((P*1000).toPrecision(4))+' mW'],
+    );
+  }
+
+  if (!items.length) { err.classList.add('visible'); return; }
+  showResults('grid-current','res-current', items);
+}
+
+function clearPanel(panel) {
+  document.getElementById('res-'+panel).classList.remove('visible');
+  document.getElementById('err-'+panel).classList.remove('visible');
+  document.querySelectorAll('#panel-'+panel+' input[type=number]').forEach(el => {
+    if (!el.id.includes('vfs') && el.getAttribute('placeholder')) el.value = '';
+  });
+}
+</script>
+</body>
+</html>

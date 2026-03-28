@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unit Converter — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .category-tabs { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1.5rem; }
+    .cat-btn {
+      padding:.35rem .75rem; border-radius:999px; font-size:.85rem; font-weight:600;
+      border:1px solid var(--border); background:var(--white); cursor:pointer; transition:.12s;
+    }
+    .cat-btn:hover, .cat-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+
+    /* Converter row */
+    .conv-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      flex-wrap: wrap;
+    }
+
+    /* Re-use .unit-input visual for both sides */
+    .conv-field {
+      display: inline-flex;
+      width: fit-content;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .conv-field:focus-within {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+    .conv-field input[type=number] {
+      flex: 0 0 auto;
+      width: 130px !important;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      outline: none;
+      padding: .5rem .75rem;
+      font-size: .95rem;
+      color: var(--text);
+      background: var(--white);
+      -moz-appearance: textfield;
+    }
+    .conv-field input[type=number]::-webkit-inner-spin-button,
+    .conv-field input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .conv-field select {
+      flex: 0 0 auto;
+      width: auto !important;
+      border: none !important;
+      border-left: 1px solid var(--border) !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      padding: .5rem .65rem .5rem .65rem;
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      cursor: pointer;
+      outline: none;
+    }
+
+    /* Output field — read-only, slightly different bg */
+    .conv-field.output input[type=number] {
+      background: var(--bg);
+      cursor: default;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .swap-btn {
+      background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: .45rem .7rem; cursor: pointer; font-size: 1.1rem; transition: .12s; flex-shrink: 0;
+      line-height: 1;
+    }
+    .swap-btn:hover { background: var(--blue-light); border-color: var(--blue); }
+
+    .arrow-lbl {
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html">Electrical</a>
+    <a href="unit-converter.html" class="active">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+
+  <main class="main">
+    <div class="page-title">🔄 Unit Converter</div>
+    <div class="page-subtitle">Convert between different measurement systems — imperial, metric, and more.</div>
+
+    <div class="card">
+      <h2>Category</h2>
+      <div class="category-tabs" id="cat-tabs"></div>
+
+      <div class="conv-row">
+        <!-- Input side -->
+        <div class="conv-field" id="from-wrap">
+          <input type="number" id="val-from" placeholder="0" step="any">
+          <select id="unit-from"></select>
+        </div>
+
+        <button class="swap-btn" onclick="swapUnits()" title="Swap units">⇄</button>
+
+        <!-- Output side (readonly) -->
+        <div class="conv-field output" id="to-wrap">
+          <input type="number" id="val-to" readonly tabindex="-1" placeholder="—">
+          <select id="unit-to"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Quick Reference — SI Prefixes</h2>
+      <table class="data-table">
+        <thead><tr><th>Prefix</th><th>Symbol</th><th>Factor</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Tera</td><td>T</td><td>10¹²</td><td>1,000,000,000,000</td></tr>
+          <tr><td>Giga</td><td>G</td><td>10⁹</td><td>1,000,000,000</td></tr>
+          <tr><td>Mega</td><td>M</td><td>10⁶</td><td>1,000,000</td></tr>
+          <tr><td>Kilo</td><td>k</td><td>10³</td><td>1,000</td></tr>
+          <tr><td><em>Base</em></td><td>—</td><td>10⁰</td><td>1</td></tr>
+          <tr><td>Milli</td><td>m</td><td>10⁻³</td><td>0.001</td></tr>
+          <tr><td>Micro</td><td>µ</td><td>10⁻⁶</td><td>0.000001</td></tr>
+          <tr><td>Nano</td><td>n</td><td>10⁻⁹</td><td>0.000000001</td></tr>
+          <tr><td>Pico</td><td>p</td><td>10⁻¹²</td><td>0.000000000001</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+// All factors are relative to each category's SI base unit.
+// Temperature uses special handling.
+const categories = {
+  'Length': {
+    defaultFrom: 0, defaultTo: 3, // mm → in
+    units: [
+      { label: 'mm',   factor: 1e-3      },
+      { label: 'm',    factor: 1         },
+      { label: 'km',   factor: 1e3       },
+      { label: 'in',   factor: 0.0254    },
+      { label: 'ft',   factor: 0.3048    },
+      { label: 'yd',   factor: 0.9144    },
+      { label: 'mi',   factor: 1609.344  },
+      { label: 'nmi',  factor: 1852      },
+    ]
+  },
+  'Mass': {
+    defaultFrom: 1, defaultTo: 4, // kg → lb
+    units: [
+      { label: 'g',   factor: 1e-3         },
+      { label: 'kg',  factor: 1            },
+      { label: 't',   factor: 1e3          },
+      { label: 'oz',  factor: 0.028349523  },
+      { label: 'lb',  factor: 0.45359237   },
+      { label: 'st',  factor: 6.35029318   },
+    ]
+  },
+  'Temperature': {
+    special: true,
+    defaultFrom: 0, defaultTo: 1, // °C → °F
+    units: [
+      { label: '°C' },
+      { label: '°F' },
+      { label: 'K'  },
+    ]
+  },
+  'Pressure': {
+    defaultFrom: 3, defaultTo: 4, // atm → PSI
+    units: [
+      { label: 'Pa',   factor: 1        },
+      { label: 'kPa',  factor: 1e3      },
+      { label: 'bar',  factor: 1e5      },
+      { label: 'atm',  factor: 101325   },
+      { label: 'PSI',  factor: 6894.757 },
+      { label: 'mmHg', factor: 133.322  },
+      { label: 'inHg', factor: 3386.39  },
+    ]
+  },
+  'Energy': {
+    defaultFrom: 6, defaultTo: 0, // BTU → J
+    units: [
+      { label: 'J',     factor: 1          },
+      { label: 'kJ',    factor: 1e3        },
+      { label: 'cal',   factor: 4.184      },
+      { label: 'kcal',  factor: 4184       },
+      { label: 'Wh',    factor: 3600       },
+      { label: 'kWh',   factor: 3.6e6      },
+      { label: 'BTU',   factor: 1055.06    },
+      { label: 'eV',    factor: 1.60218e-19},
+      { label: 'ft·lb', factor: 1.35582    },
+    ]
+  },
+  'Power': {
+    defaultFrom: 3, defaultTo: 0, // hp → W
+    units: [
+      { label: 'W',     factor: 1      },
+      { label: 'kW',    factor: 1e3    },
+      { label: 'MW',    factor: 1e6    },
+      { label: 'hp',    factor: 745.7  },
+      { label: 'BTU/h', factor: 0.29307},
+    ]
+  },
+  'Frequency': {
+    defaultFrom: 4, defaultTo: 0, // RPM → Hz
+    units: [
+      { label: 'Hz',    factor: 1              },
+      { label: 'kHz',   factor: 1e3            },
+      { label: 'MHz',   factor: 1e6            },
+      { label: 'GHz',   factor: 1e9            },
+      { label: 'RPM',   factor: 1/60           },
+      { label: 'rad/s', factor: 1/(2*Math.PI)  },
+    ]
+  },
+  'Angle': {
+    defaultFrom: 1, defaultTo: 0, // rad → °
+    units: [
+      { label: '°',    factor: Math.PI/180    },
+      { label: 'rad',  factor: 1              },
+      { label: 'grad', factor: Math.PI/200    },
+      { label: '\'',   factor: Math.PI/10800  },
+      { label: '"',    factor: Math.PI/648000 },
+      { label: 'rev',  factor: 2*Math.PI      },
+    ]
+  },
+  'Data': {
+    defaultFrom: 0, defaultTo: 1, // bit → B
+    units: [
+      { label: 'bit', factor: 1    },
+      { label: 'B',   factor: 8    },
+      { label: 'kB',  factor: 8e3  },
+      { label: 'MB',  factor: 8e6  },
+      { label: 'GB',  factor: 8e9  },
+      { label: 'TB',  factor: 8e12 },
+    ]
+  },
+};
+
+let currentCat = 'Length';
+
+function buildTabs() {
+  const tabs = document.getElementById('cat-tabs');
+  tabs.innerHTML = Object.keys(categories).map(c =>
+    `<button class="cat-btn${c === currentCat ? ' active' : ''}" onclick="selectCat('${c}')">${c}</button>`
+  ).join('');
+}
+
+function selectCat(cat) {
+  currentCat = cat;
+  buildTabs();
+  buildSelects();
+}
+
+function buildSelects() {
+  const cat = categories[currentCat];
+  const fromSel = document.getElementById('unit-from');
+  const toSel   = document.getElementById('unit-to');
+
+  fromSel.innerHTML = cat.units.map((u, i) => `<option value="${i}">${u.label}</option>`).join('');
+  toSel.innerHTML   = cat.units.map((u, i) => `<option value="${i}">${u.label}</option>`).join('');
+
+  fromSel.selectedIndex = cat.defaultFrom ?? 0;
+  toSel.selectedIndex   = cat.defaultTo   ?? 1;
+
+  document.getElementById('val-from').value = '';
+  document.getElementById('val-to').value   = '';
+}
+
+function convertTemp(val, fromLabel, toLabel) {
+  // Convert to °C first
+  let c;
+  if (fromLabel === '°C') c = val;
+  else if (fromLabel === '°F') c = (val - 32) * 5 / 9;
+  else c = val - 273.15; // K
+
+  if (toLabel === '°C') return c;
+  if (toLabel === '°F') return c * 9 / 5 + 32;
+  return c + 273.15; // K
+}
+
+function formatResult(v) {
+  if (!isFinite(v)) return '';
+  const abs = Math.abs(v);
+  if (abs === 0) return '0';
+  if (abs >= 1e9 || (abs < 1e-4 && abs > 0)) return parseFloat(v.toExponential(5));
+  return parseFloat(v.toPrecision(7));
+}
+
+function convert() {
+  const valStr = document.getElementById('val-from').value;
+  const valTo  = document.getElementById('val-to');
+  if (valStr === '') { valTo.value = ''; return; }
+  const val = parseFloat(valStr);
+  if (isNaN(val)) { valTo.value = ''; return; }
+
+  const cat   = categories[currentCat];
+  const fi    = parseInt(document.getElementById('unit-from').value);
+  const ti    = parseInt(document.getElementById('unit-to').value);
+
+  let result;
+  if (cat.special) {
+    result = convertTemp(val, cat.units[fi].label, cat.units[ti].label);
+  } else {
+    result = val * cat.units[fi].factor / cat.units[ti].factor;
+  }
+
+  valTo.value = formatResult(result);
+}
+
+function swapUnits() {
+  const fromSel = document.getElementById('unit-from');
+  const toSel   = document.getElementById('unit-to');
+  const tmp     = fromSel.value;
+  fromSel.value = toSel.value;
+  toSel.value   = tmp;
+
+  // Also swap the values
+  const fromInp = document.getElementById('val-from');
+  const toInp   = document.getElementById('val-to');
+  fromInp.value = toInp.value;
+
+  convert();
+}
+
+// Wire up live conversion
+document.getElementById('val-from').addEventListener('input', convert);
+document.getElementById('unit-from').addEventListener('change', convert);
+document.getElementById('unit-to').addEventListener('change', convert);
+
+buildTabs();
+buildSelects();
+</script>
+</body>
+</html>

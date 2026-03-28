@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWG Wire Gauge Reference — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .filter-row { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; margin-bottom:1rem; }
+    .filter-row input { max-width:220px; }
+    .highlight { background:#fef9c3 !important; }
+    .current-high { color: #dc2626; font-weight: 700; }
+    .current-med  { color: #ea580c; }
+    .current-ok   { color: #16a34a; }
+    .awg-num { font-weight:700; color:var(--blue); }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html">Electrical</a>
+    <a href="unit-converter.html" class="active">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+
+  <main class="main">
+    <div class="page-title">🔌 AWG Wire Gauge Reference</div>
+    <div class="page-subtitle">American Wire Gauge — diameter, cross-section, resistance per metre, and maximum current ratings.</div>
+
+    <div class="card">
+      <h2>Find Wire for a Current</h2>
+      <div class="form-grid" style="max-width:340px;margin-bottom:.5rem;">
+        <div class="form-group">
+          <label for="target-current">Required Current</label>
+          <div class="input-wrap">
+            <input type="number" id="target-current" placeholder="e.g. 5" step="any" min="0" oninput="highlightForCurrent()">
+            <span class="input-unit">A</span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:.82rem;color:var(--text-muted)" id="current-hint"></p>
+    </div>
+
+    <div class="card">
+      <h2>AWG Reference Table</h2>
+      <div class="filter-row">
+        <input type="text" id="search-awg" placeholder="🔍 Filter by AWG number..." oninput="filterTable()">
+        <label style="text-transform:none;font-weight:normal;font-size:.85rem;display:flex;align-items:center;gap:.4rem;">
+          <input type="checkbox" id="show-common" onchange="filterTable()" checked> Common gauges only
+        </label>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="awg-table">
+          <thead>
+            <tr>
+              <th>AWG</th>
+              <th>Diameter (mm)</th>
+              <th>Diameter (in)</th>
+              <th>Area (mm²)</th>
+              <th>Resistance (Ω/m)</th>
+              <th>Max Current (A) <small>chassis</small></th>
+              <th>Max Current (A) <small>bundle</small></th>
+              <th>Typical Use</th>
+            </tr>
+          </thead>
+          <tbody id="awg-body"></tbody>
+        </table>
+      </div>
+      <div class="info-box">
+        ⚠ Current ratings are approximate and depend on insulation type, ambient temperature, and installation conditions. Always consult applicable standards (NEC, IEC, etc.) for safety-critical applications.
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// AWG data: [awg, diameter_mm, area_mm2, ohm_per_m, max_chassis_A, max_bundle_A, use, common]
+const awgData = [
+  [0000, 11.684, 107.2, 0.000161, 302, 230, 'Very heavy power', true],
+  [000,  10.404, 85.01, 0.000203, 260, 200, 'Heavy power', true],
+  [00,   9.266,  67.43, 0.000256, 225, 175, 'Heavy power', true],
+  [0,    8.252,  53.48, 0.000323, 195, 150, 'Heavy power', true],
+  [1,    7.348,  42.41, 0.000407, 170, 130, 'Power distribution', true],
+  [2,    6.544,  33.63, 0.000513, 145, 115, 'Power distribution', true],
+  [3,    5.827,  26.67, 0.000647, 127, 100, 'Power distribution', false],
+  [4,    5.189,  21.15, 0.000815, 110, 85,  'Power distribution', true],
+  [5,    4.621,  16.77, 0.001028, 97,  75,  'Power distribution', false],
+  [6,    4.115,  13.30, 0.001296, 85,  65,  'Power feed', true],
+  [7,    3.665,  10.55, 0.001634, 73,  57,  'Power feed', false],
+  [8,    3.264,  8.366, 0.002060, 65,  50,  'Power feed', true],
+  [9,    2.906,  6.632, 0.002597, 55,  43,  'Power feed', false],
+  [10,   2.588,  5.261, 0.003276, 50,  40,  'Household appliances', true],
+  [11,   2.305,  4.172, 0.004130, 43,  33,  'Household circuits', false],
+  [12,   2.053,  3.309, 0.005211, 41,  30,  'Household circuits (20A)', true],
+  [13,   1.828,  2.624, 0.006571, 35,  27,  'Household circuits', false],
+  [14,   1.628,  2.081, 0.008286, 32,  25,  'Household circuits (15A)', true],
+  [16,   1.291,  1.309, 0.01318,  22,  18,  'Light fixtures, extensions', true],
+  [18,   1.024,  0.8231,0.02093,  16,  14,  'Lamp cords, electronics', true],
+  [20,   0.8128, 0.5189,0.03324,  11,  8.5, 'Electronics, internal wiring', true],
+  [22,   0.6438, 0.3255,0.05291,  7,   5,   'Electronics, signal', true],
+  [24,   0.5106, 0.2047,0.08421,  3.5, 2.5, 'PCB traces, signal', true],
+  [26,   0.4049, 0.1288,0.1338,   2.2, 1.5, 'PCB, instrumentation', true],
+  [28,   0.3211, 0.0810,0.2127,   0.83,0.7, 'Thin board wiring', true],
+  [30,   0.2546, 0.0509,0.3386,   0.52,0.35,'Very thin / ribbon cable', true],
+  [32,   0.2019, 0.0320,0.5388,   0.32,0.24,'Fine wire, coils', false],
+  [34,   0.1601, 0.0201,0.8572,   0.18,0.14,'Fine wire, coils', false],
+  [36,   0.1270, 0.0127,1.361,    0.10,0.09,'Ultra-fine wire', false],
+  [40,   0.0799, 0.0050,3.441,    0.033,0.03,'Ultra-fine wire, sensors', false],
+];
+
+function renderTable(data) {
+  const targetA = parseFloat(document.getElementById('target-current').value);
+  const body = document.getElementById('awg-body');
+  if (!data.length) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:2rem;">No results</td></tr>'; return; }
+
+  body.innerHTML = data.map(([awg, dia_mm, area, ohm_m, maxC, maxB, use, common]) => {
+    const dia_in = dia_mm / 25.4;
+    const res = ohm_m;
+    let currentClass = '';
+    let highlighted = '';
+
+    if (!isNaN(targetA)) {
+      if (maxC >= targetA * 1.25) currentClass = 'current-ok';
+      else if (maxC >= targetA) currentClass = 'current-med';
+      else currentClass = 'current-high';
+      if (maxC >= targetA && (data.indexOf(data.find(d=>d[0]===awg)) === data.findIndex(d => d[5] >= targetA)))
+        highlighted = ' highlight';
+    }
+
+    return `<tr class="${highlighted}">
+      <td class="awg-num">${awg}</td>
+      <td>${dia_mm.toFixed(3)}</td>
+      <td>${dia_in.toFixed(4)}</td>
+      <td>${area.toPrecision(4)}</td>
+      <td>${res < 0.01 ? res.toExponential(3) : res.toPrecision(4)}</td>
+      <td class="${currentClass}">${maxC}</td>
+      <td>${maxB}</td>
+      <td style="color:var(--text-muted);font-size:.82rem;">${use}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable() {
+  const search = document.getElementById('search-awg').value.trim();
+  const commonOnly = document.getElementById('show-common').checked;
+  let data = awgData;
+  if (commonOnly) data = data.filter(d => d[7]);
+  if (search) data = data.filter(d => String(d[0]).includes(search));
+  renderTable(data);
+}
+
+function highlightForCurrent() {
+  const targetA = parseFloat(document.getElementById('target-current').value);
+  const hint = document.getElementById('current-hint');
+  if (!isNaN(targetA) && targetA > 0) {
+    const suitable = awgData.filter(d => d[5] >= targetA);
+    if (suitable.length) {
+      const rec = suitable[suitable.length-1]; // smallest (highest AWG number) that still handles the current
+      hint.textContent = `→ Minimum recommended: AWG ${rec[0]} (max ${rec[5]} A chassis / ${rec[6]} A bundled)`;
+    } else {
+      hint.textContent = 'Current too high for standard AWG table — use larger conductors or busbars.';
+    }
+  } else {
+    hint.textContent = '';
+  }
+  filterTable();
+}
+
+filterTable();
+</script>
+</body>
+</html>

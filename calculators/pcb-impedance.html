@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PCB Impedance Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .model-tabs { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1.25rem; }
+    .model-btn {
+      padding:.38rem .85rem; border-radius:999px; font-size:.85rem; font-weight:600;
+      border:1px solid var(--border); background:var(--white); cursor:pointer; transition:.12s;
+    }
+    .model-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+    .diagram {
+      background:#f1f5f9; border:1px solid var(--border); border-radius:var(--radius);
+      padding:.85rem 1rem; margin-bottom:1rem; display:flex; align-items:center; gap:1.5rem;
+      flex-wrap:wrap;
+    }
+    .diagram svg { flex-shrink:0; }
+    .diagram-desc { font-size:.83rem; color:var(--text-muted); line-height:1.55; }
+    .substrate-preset { display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.85rem; }
+    .sub-btn {
+      padding:.28rem .6rem; border-radius:999px; font-size:.78rem; font-weight:600;
+      border:1px solid var(--border); background:var(--white); cursor:pointer; transition:.12s;
+    }
+    .sub-btn:hover { background:var(--blue-light); border-color:#93c5fd; }
+    .z-target { display:flex; gap:.5rem; align-items:center; margin-top:.75rem; flex-wrap:wrap; }
+    .z-target label { text-transform:none; font-weight:600; font-size:.875rem; color:var(--text); }
+    .z-badge {
+      display:inline-block; padding:.15rem .55rem; border-radius:999px; font-size:.78rem;
+      font-weight:700; margin-left:.3rem;
+    }
+    .z-badge.good { background:#dcfce7; color:#15803d; }
+    .z-badge.warn { background:#fef9c3; color:#92400e; }
+    .z-badge.bad  { background:#fee2e2; color:#b91c1c; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html" class="active">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+
+  <main class="main">
+    <div class="page-title">📡 PCB Impedance Calculator</div>
+    <div class="page-subtitle">Calculate characteristic impedance for common PCB transmission line structures. Based on IPC-2141A and Wadell formulae.</div>
+
+    <!-- Substrate presets -->
+    <div class="card">
+      <h2>Substrate Presets</h2>
+      <div class="substrate-preset">
+        <button class="sub-btn" onclick="setSubstrate(4.5, 'FR4 (standard)')">FR4 (4.5)</button>
+        <button class="sub-btn" onclick="setSubstrate(4.3, 'FR4 @ 1 GHz')">FR4 @ 1GHz (4.3)</button>
+        <button class="sub-btn" onclick="setSubstrate(3.55, 'Rogers 4003C')">Rogers 4003C (3.55)</button>
+        <button class="sub-btn" onclick="setSubstrate(3.48, 'Rogers 4350B')">Rogers 4350B (3.48)</button>
+        <button class="sub-btn" onclick="setSubstrate(3.0, 'Rogers RO3003')">RO3003 (3.0)</button>
+        <button class="sub-btn" onclick="setSubstrate(2.2, 'PTFE / Teflon')">PTFE (2.2)</button>
+        <button class="sub-btn" onclick="setSubstrate(9.8, 'Alumina ceramic')">Alumina (9.8)</button>
+      </div>
+    </div>
+
+    <!-- Model selector -->
+    <div class="model-tabs">
+      <button class="model-btn active" onclick="setModel('microstrip')">Microstrip</button>
+      <button class="model-btn" onclick="setModel('embedded')">Embedded Microstrip</button>
+      <button class="model-btn" onclick="setModel('stripline')">Stripline (symmetric)</button>
+      <button class="model-btn" onclick="setModel('diff-micro')">Differential Microstrip</button>
+      <button class="model-btn" onclick="setModel('diff-strip')">Differential Stripline</button>
+    </div>
+
+    <!-- Microstrip -->
+    <div class="card model-panel" id="panel-microstrip">
+      <h2>Microstrip</h2>
+      <div class="diagram">
+        <svg width="220" height="90" viewBox="0 0 220 90">
+          <rect x="10" y="60" width="200" height="18" fill="#b45309" rx="2"/>
+          <text x="115" y="74" text-anchor="middle" font-size="9" fill="#fff">Ground Plane</text>
+          <rect x="85" y="38" width="50" height="18" fill="#ca8a04" rx="2"/>
+          <text x="110" y="51" text-anchor="middle" font-size="9" fill="#fff">Trace (W)</text>
+          <line x1="10" y1="38" x2="83" y2="38" stroke="#94a3b8" stroke-dasharray="3,2"/>
+          <line x1="137" y1="38" x2="210" y2="38" stroke="#94a3b8" stroke-dasharray="3,2"/>
+          <text x="50" y="35" font-size="9" fill="#64748b">Dielectric (εr)</text>
+          <!-- H arrow -->
+          <line x1="170" y1="38" x2="170" y2="60" stroke="#3b82f6" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+          <text x="175" y="52" font-size="9" fill="#3b82f6">H</text>
+          <!-- W arrow -->
+          <line x1="85" y1="28" x2="135" y2="28" stroke="#3b82f6" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+          <text x="105" y="24" font-size="9" fill="#3b82f6">W</text>
+          <defs>
+            <marker id="arrow" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">
+              <path d="M0,0 L0,4 L4,2 z" fill="#3b82f6"/>
+            </marker>
+          </defs>
+        </svg>
+        <div class="diagram-desc">
+          Trace on top of dielectric, ground plane below.<br>
+          Used for outer-layer signal routing.
+          <br><br>
+          <strong>Formula (IPC-2141A):</strong><br>
+          Z₀ = (87/√(εr+1.41)) × ln(5.98H/(0.8W+T))
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label for="ms-w">Trace Width (W)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="ms-w" placeholder="e.g. 0.2" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="ms-h">Substrate Height (H)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="ms-h" placeholder="e.g. 0.2" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="ms-t">Trace Thickness (T)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="ms-t" value="0.035" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="ms-er">Dielectric Constant (εr)</label>
+          <div class="input-wrap"><input type="number" id="ms-er" value="4.5" step="any" min="1"><span class="input-unit"></span></div>
+        </div>
+      </div>
+      <div class="error" id="err-ms">⚠ Enter positive values for W, H, and εr.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcModel('ms')">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearModel('ms')">Clear</button>
+      </div>
+      <div class="results" id="res-ms">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-ms"></div>
+      </div>
+    </div>
+
+    <!-- Embedded Microstrip -->
+    <div class="card model-panel" id="panel-embedded" style="display:none;">
+      <h2>Embedded Microstrip</h2>
+      <div class="diagram">
+        <div class="diagram-desc">
+          Trace is covered by a dielectric layer above (e.g. soldermask or prepreg). Ground plane below.<br><br>
+          <strong>Formula:</strong><br>
+          εr_eff = εr × (1 − e^(−1.55 × B/H))<br>
+          Z₀ = (87/√(εr_eff+1.41)) × ln(5.98H/(0.8W+T))
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label for="em-w">Trace Width (W)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="em-w" placeholder="e.g. 0.2" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="em-h">Height below trace (H)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="em-h" placeholder="e.g. 0.2" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="em-b">Cover thickness (B)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="em-b" value="0.1" placeholder="e.g. 0.1" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="em-t">Trace Thickness (T)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="em-t" value="0.035" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="em-er">Dielectric Constant (εr)</label>
+          <div class="input-wrap"><input type="number" id="em-er" value="4.5" step="any" min="1"></div>
+        </div>
+      </div>
+      <div class="error" id="err-em">⚠ Enter positive values for all fields.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcModel('em')">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearModel('em')">Clear</button>
+      </div>
+      <div class="results" id="res-em">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-em"></div>
+      </div>
+    </div>
+
+    <!-- Stripline -->
+    <div class="card model-panel" id="panel-stripline" style="display:none;">
+      <h2>Stripline (Symmetric)</h2>
+      <div class="diagram">
+        <div class="diagram-desc">
+          Trace is embedded between two ground planes, centred in the dielectric.<br><br>
+          <strong>Formula (IPC-2141A):</strong><br>
+          Z₀ = (60/√εr) × ln(4B / (0.67π(0.8W+T)))<br>
+          where B = distance between ground planes.
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label for="sl-w">Trace Width (W)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="sl-w" placeholder="e.g. 0.2" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="sl-b">Plane separation (B)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="sl-b" placeholder="e.g. 0.4" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="sl-t">Trace Thickness (T)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="sl-t" value="0.035" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="sl-er">Dielectric Constant (εr)</label>
+          <div class="input-wrap"><input type="number" id="sl-er" value="4.5" step="any" min="1"></div>
+        </div>
+      </div>
+      <div class="error" id="err-sl">⚠ Enter positive values for all fields.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcModel('sl')">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearModel('sl')">Clear</button>
+      </div>
+      <div class="results" id="res-sl">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-sl"></div>
+      </div>
+    </div>
+
+    <!-- Differential Microstrip -->
+    <div class="card model-panel" id="panel-diff-micro" style="display:none;">
+      <h2>Differential Pair — Microstrip</h2>
+      <div class="diagram">
+        <div class="diagram-desc">
+          Two coupled microstrip traces. Differential impedance is the impedance seen between the two conductors.<br><br>
+          <strong>Formula:</strong><br>
+          Zdiff ≈ 2 × Z₀ × (1 − 0.347 × e^(−2.9 × S/H))<br>
+          where Z₀ is single-ended microstrip impedance.
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label for="dm-w">Trace Width (W)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="dm-w" placeholder="e.g. 0.2" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="dm-s">Trace Spacing (S)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="dm-s" placeholder="e.g. 0.2" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="dm-h">Substrate Height (H)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="dm-h" placeholder="e.g. 0.2" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="dm-t">Trace Thickness (T)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="dm-t" value="0.035" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="dm-er">Dielectric Constant (εr)</label>
+          <div class="input-wrap"><input type="number" id="dm-er" value="4.5" step="any" min="1"></div>
+        </div>
+      </div>
+      <div class="error" id="err-dm">⚠ Enter positive values for all fields.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcModel('dm')">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearModel('dm')">Clear</button>
+      </div>
+      <div class="results" id="res-dm">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-dm"></div>
+      </div>
+    </div>
+
+    <!-- Differential Stripline -->
+    <div class="card model-panel" id="panel-diff-strip" style="display:none;">
+      <h2>Differential Pair — Stripline</h2>
+      <div class="diagram">
+        <div class="diagram-desc">
+          Two coupled traces embedded between ground planes.<br><br>
+          <strong>Formula:</strong><br>
+          Zdiff ≈ 2 × Z₀ × (1 − 0.347 × e^(−2.9 × S/B))<br>
+          where Z₀ is single-ended stripline impedance.
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label for="ds-w">Trace Width (W)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="ds-w" placeholder="e.g. 0.2" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="ds-s">Trace Spacing (S)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="ds-s" placeholder="e.g. 0.2" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="ds-b">Plane Separation (B)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="ds-b" placeholder="e.g. 0.4" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="ds-t">Trace Thickness (T)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3"><input type="number" id="ds-t" value="0.035" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group"><label for="ds-er">Dielectric Constant (εr)</label>
+          <div class="input-wrap"><input type="number" id="ds-er" value="4.5" step="any" min="1"></div>
+        </div>
+      </div>
+      <div class="error" id="err-ds">⚠ Enter positive values for all fields.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcModel('ds')">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearModel('ds')">Clear</button>
+      </div>
+      <div class="results" id="res-ds">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-ds"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Common Target Impedances</h2>
+      <table class="data-table">
+        <thead><tr><th>Protocol / Use</th><th>Z (single-ended)</th><th>Zdiff</th></tr></thead>
+        <tbody>
+          <tr><td>General signal</td><td>50 Ω</td><td>—</td></tr>
+          <tr><td>USB 2.0</td><td>—</td><td>90 Ω</td></tr>
+          <tr><td>USB 3.x / USB4</td><td>—</td><td>85–90 Ω</td></tr>
+          <tr><td>HDMI / DisplayPort</td><td>—</td><td>100 Ω</td></tr>
+          <tr><td>PCIe</td><td>—</td><td>85 Ω</td></tr>
+          <tr><td>Ethernet (100M/1G)</td><td>—</td><td>100 Ω</td></tr>
+          <tr><td>DDR memory (data)</td><td>40–60 Ω</td><td>—</td></tr>
+          <tr><td>RF / microwave coax</td><td>50 Ω</td><td>—</td></tr>
+          <tr><td>Video / 75 Ω systems</td><td>75 Ω</td><td>—</td></tr>
+          <tr><td>RS-422 / RS-485</td><td>—</td><td>120 Ω</td></tr>
+          <tr><td>CAN bus</td><td>—</td><td>120 Ω</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+let currentModel = 'ms';
+const models = ['microstrip','embedded','stripline','diff-micro','diff-strip'];
+
+function setModel(model) {
+  currentModel = model;
+  models.forEach(m => {
+    document.getElementById('panel-'+m).style.display = (m === model) ? '' : 'none';
+  });
+  document.querySelectorAll('.model-btn').forEach((btn, i) => {
+    btn.className = 'model-btn' + (models[i] === model ? ' active' : '');
+  });
+}
+
+function setSubstrate(er, name) {
+  ['ms','em','sl','dm','ds'].forEach(prefix => {
+    const el = document.getElementById(prefix+'-er');
+    if (el) el.value = er;
+  });
+}
+
+function microstrip_z0(W, H, T, er) {
+  return (87 / Math.sqrt(er + 1.41)) * Math.log(5.98 * H / (0.8 * W + T));
+}
+
+function showResult(gridId, resId, items) {
+  document.getElementById(gridId).innerHTML = items.map(([label, value, unit]) =>
+    `<div class="result-item"><div class="result-label">${label}</div><div class="result-value">${value}${unit ? `<span class="unit">${unit}</span>` : ''}</div></div>`
+  ).join('');
+  document.getElementById(resId).classList.add('visible');
+}
+
+function zBadge(z, target, tol=5) {
+  const pct = Math.abs(z - target) / target * 100;
+  if (pct <= tol) return `<span class="z-badge good">✓ within ${tol}% of ${target} Ω</span>`;
+  if (pct <= 15)  return `<span class="z-badge warn">~ ${pct.toFixed(1)}% from ${target} Ω</span>`;
+  return '';
+}
+
+function calcModel(prefix) {
+  const err = document.getElementById('err-'+prefix);
+  err.classList.remove('visible');
+  document.getElementById('res-'+prefix).classList.remove('visible');
+
+  // g() returns mm for distance fields, raw value for dimensionless (εr)
+  const g = id => id === 'er'
+    ? parseFloat(document.getElementById(prefix+'-'+id).value)
+    : unitVal(prefix+'-'+id) * 1000; // unitVal returns metres → convert to mm
+
+  if (prefix === 'ms') {
+    const W=g('w'), H=g('h'), T=g('t'), er=g('er');
+    if ([W,H,T,er].some(v=>isNaN(v)||v<=0)) { err.classList.add('visible'); return; }
+    const z0 = microstrip_z0(W,H,T,er);
+    const er_eff = (er+1)/2 + (er-1)/2 * Math.pow(1+12*H/W,-0.5);
+    const c = 3e8;
+    const vp = c / Math.sqrt(er_eff);
+    const td_ps_mm = 1e12 / (vp * 1e3); // ps/mm
+    showResult('grid-ms','res-ms',[
+      ['Z₀',''+z0.toFixed(2),' Ω'],
+      ['εr_eff',''+er_eff.toFixed(3),''],
+      ['Velocity (vp)',''+((vp/c*100).toFixed(1)),'% c'],
+      ['Delay',''+td_ps_mm.toFixed(2),' ps/mm'],
+    ]);
+
+  } else if (prefix === 'em') {
+    const W=g('w'), H=g('h'), B=g('b'), T=g('t'), er=g('er');
+    if ([W,H,B,T,er].some(v=>isNaN(v)||v<=0)) { err.classList.add('visible'); return; }
+    const er_eff = er * (1 - Math.exp(-1.55*B/H));
+    const z0 = (87 / Math.sqrt(er_eff + 1.41)) * Math.log(5.98*H/(0.8*W+T));
+    const vp = 3e8 / Math.sqrt(er_eff);
+    showResult('grid-em','res-em',[
+      ['Z₀',''+z0.toFixed(2),' Ω'],
+      ['εr_eff (cover corrected)',''+er_eff.toFixed(3),''],
+      ['Velocity (vp)',''+((vp/3e8*100).toFixed(1)),'% c'],
+    ]);
+
+  } else if (prefix === 'sl') {
+    const W=g('w'), B=g('b'), T=g('t'), er=g('er');
+    if ([W,B,T,er].some(v=>isNaN(v)||v<=0)) { err.classList.add('visible'); return; }
+    const arg = 4*B / (0.67 * Math.PI * (0.8*W + T));
+    if (arg <= 1) { err.textContent = '⚠ Geometry out of range — reduce W or T, or increase B.'; err.classList.add('visible'); return; }
+    const z0 = (60 / Math.sqrt(er)) * Math.log(arg);
+    const vp = 3e8 / Math.sqrt(er);
+    const td_ps_mm = 1e12 / (vp * 1e3);
+    showResult('grid-sl','res-sl',[
+      ['Z₀',''+z0.toFixed(2),' Ω'],
+      ['εr',''+er.toFixed(2),''],
+      ['Velocity (vp)',''+((vp/3e8*100).toFixed(1)),'% c'],
+      ['Delay',''+td_ps_mm.toFixed(2),' ps/mm'],
+    ]);
+
+  } else if (prefix === 'dm') {
+    const W=g('w'), S=g('s'), H=g('h'), T=g('t'), er=g('er');
+    if ([W,S,H,T,er].some(v=>isNaN(v)||v<=0)) { err.classList.add('visible'); return; }
+    const z0 = microstrip_z0(W,H,T,er);
+    const zdiff = 2 * z0 * (1 - 0.347 * Math.exp(-2.9 * S/H));
+    const zcommon = z0/2 * (1 + 0.347 * Math.exp(-2.9 * S/H));
+    showResult('grid-dm','res-dm',[
+      ['Z₀ (single-ended)',''+z0.toFixed(2),' Ω'],
+      ['Zdiff',''+zdiff.toFixed(2),' Ω'],
+      ['Zcommon',''+zcommon.toFixed(2),' Ω'],
+    ]);
+
+  } else if (prefix === 'ds') {
+    const W=g('w'), S=g('s'), B=g('b'), T=g('t'), er=g('er');
+    if ([W,S,B,T,er].some(v=>isNaN(v)||v<=0)) { err.classList.add('visible'); return; }
+    const arg = 4*B / (0.67 * Math.PI * (0.8*W + T));
+    if (arg <= 1) { err.textContent = '⚠ Geometry out of range.'; err.classList.add('visible'); return; }
+    const z0 = (60 / Math.sqrt(er)) * Math.log(arg);
+    const zdiff = 2 * z0 * (1 - 0.347 * Math.exp(-2.9 * S/B));
+    const zcommon = z0/2 * (1 + 0.347 * Math.exp(-2.9 * S/B));
+    showResult('grid-ds','res-ds',[
+      ['Z₀ (single-ended)',''+z0.toFixed(2),' Ω'],
+      ['Zdiff',''+zdiff.toFixed(2),' Ω'],
+      ['Zcommon',''+zcommon.toFixed(2),' Ω'],
+    ]);
+  }
+}
+
+function clearModel(prefix) {
+  document.getElementById('res-'+prefix).classList.remove('visible');
+  document.getElementById('err-'+prefix).classList.remove('visible');
+}
+
+document.querySelectorAll('.model-btn').forEach((btn, i) => {
+  btn.addEventListener('click', () => setModel(models[i]));
+});
+</script>
+</body>
+</html>

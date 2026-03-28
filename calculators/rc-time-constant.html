@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RC Time Constant Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .tau-table td:first-child { font-weight: 600; color: var(--blue); }
+    .progress-bar-wrap { background: #e2e8f0; border-radius: 999px; height: 8px; margin-top: 4px; }
+    .progress-bar { background: var(--blue); border-radius: 999px; height: 8px; transition: width .3s; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html" class="active">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+
+  <main class="main">
+    <div class="page-title">📈 RC Time Constant Calculator</div>
+    <div class="page-subtitle">Calculate τ, cutoff frequency, and charge/discharge voltage at any time step.</div>
+
+    <div class="card">
+      <h2>RC Parameters</h2>
+      <div class="formula-block">τ = R × C &nbsp;&nbsp;|&nbsp;&nbsp; f<sub>c</sub> = 1 / (2π × R × C)</div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="res">Resistance (R)</label>
+          <div class="unit-input" data-type="resistance" data-default="1e3">
+            <input type="number" id="res" placeholder="e.g. 10000" step="any" min="0">
+            <select id="res-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="cap">Capacitance (C)</label>
+          <div class="unit-input" data-type="capacitance" data-default="1e-6">
+            <input type="number" id="cap" placeholder="e.g. 100" step="any" min="0">
+            <select id="cap-unit"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="error" id="err-rc">⚠ Please enter valid R and C values.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcRC()">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearRC()">Clear</button>
+      </div>
+
+      <div class="results" id="res-rc">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-rc"></div>
+      </div>
+    </div>
+
+    <!-- Charge/Discharge table -->
+    <div class="card" id="charge-card" style="display:none;">
+      <h2>Charge / Discharge Voltage Table</h2>
+      <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:.85rem;">
+        Charging: V(t) = V<sub>s</sub> × (1 − e<sup>−t/τ</sup>) &nbsp;|&nbsp;
+        Discharging: V(t) = V<sub>0</sub> × e<sup>−t/τ</sup>
+      </p>
+
+      <div class="form-grid" style="margin-bottom:1rem;">
+        <div class="form-group">
+          <label for="vs">Supply Voltage (Vs)</label>
+          <div class="input-wrap">
+            <input type="number" id="vs" value="5" step="any" min="0">
+            <span class="input-unit">V</span>
+          </div>
+        </div>
+      </div>
+
+      <table class="data-table tau-table" id="tau-table">
+        <thead>
+          <tr>
+            <th>Time Constant (τ)</th>
+            <th>Time (s)</th>
+            <th>Charge %</th>
+            <th>Charge V</th>
+            <th>Discharge V</th>
+            <th>Progress</th>
+          </tr>
+        </thead>
+        <tbody id="tau-body"></tbody>
+      </table>
+
+      <div class="info-box">
+        💡 A capacitor is considered fully charged after <strong>5τ</strong> (~99.3%). Most designs use <strong>3τ</strong> (~95%) as a practical threshold.
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+let tau_s = null;
+
+function fmtTime(s) {
+  if (s < 1e-6) return (s*1e9).toPrecision(4) + ' ns';
+  if (s < 1e-3) return (s*1e6).toPrecision(4) + ' µs';
+  if (s < 1)    return (s*1e3).toPrecision(4) + ' ms';
+  if (s < 60)   return parseFloat(s.toPrecision(4)) + ' s';
+  if (s < 3600) return (s/60).toPrecision(4) + ' min';
+  return (s/3600).toPrecision(4) + ' hr';
+}
+
+function fmtFreq(f) {
+  if (f >= 1e6) return (f/1e6).toPrecision(4) + ' MHz';
+  if (f >= 1e3) return (f/1e3).toPrecision(4) + ' kHz';
+  return parseFloat(f.toPrecision(4)) + ' Hz';
+}
+
+function calcRC() {
+  const R = unitVal('res');
+  const C = unitVal('cap');
+  const err = document.getElementById('err-rc');
+  err.classList.remove('visible');
+
+  if (isNaN(R) || isNaN(C) || R <= 0 || C <= 0) { err.classList.add('visible'); return; }
+
+  tau_s = R * C;
+  const fc = 1 / (2 * Math.PI * tau_s);
+  const t63 = tau_s;
+  const t95 = 3 * tau_s;
+  const t99 = 5 * tau_s;
+
+  document.getElementById('grid-rc').innerHTML = `
+    <div class="result-item"><div class="result-label">Time Constant (τ)</div><div class="result-value">${fmtTime(tau_s)}</div></div>
+    <div class="result-item"><div class="result-label">Cutoff Freq (f<sub>c</sub>)</div><div class="result-value">${fmtFreq(fc)}</div></div>
+    <div class="result-item"><div class="result-label">63% Charge (1τ)</div><div class="result-value">${fmtTime(t63)}</div></div>
+    <div class="result-item"><div class="result-label">95% Charge (3τ)</div><div class="result-value">${fmtTime(t95)}</div></div>
+    <div class="result-item"><div class="result-label">99.3% Charge (5τ)</div><div class="result-value">${fmtTime(t99)}</div></div>
+  `;
+  document.getElementById('res-rc').classList.add('visible');
+  updateTauTable();
+  document.getElementById('charge-card').style.display = '';
+}
+
+function updateTauTable() {
+  if (!tau_s) return;
+  const vs = parseFloat(document.getElementById('vs').value) || 5;
+  const taus = [0.5, 1, 2, 3, 4, 5, 7, 10];
+  const rows = taus.map(n => {
+    const t = n * tau_s;
+    const pct = (1 - Math.exp(-n)) * 100;
+    const vc = vs * (1 - Math.exp(-n));
+    const vd = vs * Math.exp(-n);
+    return `<tr>
+      <td>${n}τ</td>
+      <td>${fmtTime(t)}</td>
+      <td>${pct.toFixed(1)}%</td>
+      <td>${vc.toFixed(3)} V</td>
+      <td>${vd.toFixed(3)} V</td>
+      <td>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('tau-body').innerHTML = rows;
+}
+
+function clearRC() {
+  ['res','cap'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('res-rc').classList.remove('visible');
+  document.getElementById('err-rc').classList.remove('visible');
+  document.getElementById('charge-card').style.display='none';
+  tau_s = null;
+}
+
+document.getElementById('vs').addEventListener('input', updateTauTable);
+</script>
+</body>
+</html>

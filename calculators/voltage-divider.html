@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voltage Divider Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .schematic-wrap {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+    .schematic-wrap svg {
+      overflow: visible;
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html" class="active">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+
+  <main class="main">
+    <div class="page-title">〽️ Voltage Divider Calculator</div>
+    <div class="page-subtitle">Calculate output voltage or find resistor values for a two-resistor divider.</div>
+
+    <!-- Mode tabs -->
+    <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
+      <button class="btn btn-primary" id="tab-vout" onclick="showMode('vout')">Find V<sub>out</sub></button>
+      <button class="btn btn-secondary" id="tab-r2" onclick="showMode('r2')">Find R2</button>
+    </div>
+
+    <!-- Find Vout -->
+    <div class="card" id="mode-vout">
+      <h2>Find Output Voltage</h2>
+      <div class="schematic-wrap">
+        <svg viewBox="0 0 200 268" width="160" xmlns="http://www.w3.org/2000/svg" aria-label="Voltage divider schematic" font-family="system-ui,sans-serif">
+
+          <!-- ── Vin label & wire ── -->
+          <text x="80" y="16" text-anchor="middle" font-size="13" font-weight="700" fill="#2563eb">Vin</text>
+          <line x1="80" y1="20" x2="80" y2="44" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- ── R1: IEC rectangle, portrait (30 × 60) ── -->
+          <rect x="65" y="44" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+          <text x="104" y="78" font-size="12" font-weight="600" fill="#1e293b">R1</text>
+
+          <!-- ── Wire R1 bottom → junction node ── -->
+          <line x1="80" y1="104" x2="80" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- ── Junction node ── -->
+          <circle cx="80" cy="130" r="4" fill="#1e293b"/>
+
+          <!-- ── Vout tap wire & label ── -->
+          <line x1="80" y1="130" x2="155" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <text x="161" y="135" font-size="13" font-weight="700" fill="#2563eb">Vout</text>
+
+          <!-- ── Wire junction → R2 ── -->
+          <line x1="80" y1="130" x2="80" y2="152" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- ── R2: IEC rectangle, portrait (30 × 60) ── -->
+          <rect x="65" y="152" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+          <text x="104" y="186" font-size="12" font-weight="600" fill="#1e293b">R2</text>
+
+          <!-- ── Wire R2 bottom → GND ── -->
+          <line x1="80" y1="212" x2="80" y2="228" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- ── GND symbol (three tapering bars) ── -->
+          <line x1="60" y1="228" x2="100" y2="228" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
+          <line x1="66" y1="236" x2="94"  y2="236" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
+          <line x1="73" y1="244" x2="87"  y2="244" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
+
+        </svg>
+      </div>
+
+      <div class="formula-block">Vout = Vin × R2 / (R1 + R2)</div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="vin1">Input Voltage (Vin)</label>
+          <div class="unit-input" data-type="voltage" data-default="1">
+            <input type="number" id="vin1" placeholder="e.g. 12" step="any" min="0">
+            <select id="vin1-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="r1a">R1</label>
+          <div class="unit-input" data-type="resistance" data-default="1">
+            <input type="number" id="r1a" placeholder="e.g. 10000" step="any" min="0">
+            <select id="r1a-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="r2a">R2</label>
+          <div class="unit-input" data-type="resistance" data-default="1">
+            <input type="number" id="r2a" placeholder="e.g. 4700" step="any" min="0">
+            <select id="r2a-unit"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="error" id="err-vout">⚠ Please enter all three values.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcVout()">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearVout()">Clear</button>
+      </div>
+
+      <div class="results" id="res-vout">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-vout"></div>
+      </div>
+    </div>
+
+    <!-- Find R2 -->
+    <div class="card" id="mode-r2" style="display:none;">
+      <h2>Find R2 for a Target Vout</h2>
+      <div class="schematic-wrap">
+        <svg viewBox="0 0 200 268" width="160" xmlns="http://www.w3.org/2000/svg" aria-label="Voltage divider schematic" font-family="system-ui,sans-serif">
+
+          <!-- ── Vin label & wire ── -->
+          <text x="80" y="16" text-anchor="middle" font-size="13" font-weight="700" fill="#2563eb">Vin</text>
+          <line x1="80" y1="20" x2="80" y2="44" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- ── R1: IEC rectangle, portrait (30 × 60) ── -->
+          <rect x="65" y="44" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+          <text x="104" y="78" font-size="12" font-weight="600" fill="#1e293b">R1</text>
+
+          <!-- ── Wire R1 bottom → junction node ── -->
+          <line x1="80" y1="104" x2="80" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- ── Junction node ── -->
+          <circle cx="80" cy="130" r="4" fill="#1e293b"/>
+
+          <!-- ── Vout tap wire & label ── -->
+          <line x1="80" y1="130" x2="155" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <text x="161" y="135" font-size="13" font-weight="700" fill="#2563eb">Vout</text>
+
+          <!-- ── Wire junction → R2 ── -->
+          <line x1="80" y1="130" x2="80" y2="152" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- ── R2: IEC rectangle, highlighted as the unknown ── -->
+          <rect x="65" y="152" width="30" height="60" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+          <text x="104" y="186" font-size="12" font-weight="600" fill="#2563eb">R2</text>
+
+          <!-- ── Wire R2 bottom → GND ── -->
+          <line x1="80" y1="212" x2="80" y2="228" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- ── GND symbol (three tapering bars) ── -->
+          <line x1="60" y1="228" x2="100" y2="228" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
+          <line x1="66" y1="236" x2="94"  y2="236" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
+          <line x1="73" y1="244" x2="87"  y2="244" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
+
+        </svg>
+      </div>
+      <div class="formula-block">R2 = R1 × Vout / (Vin − Vout)</div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="vin2">Input Voltage (Vin)</label>
+          <div class="unit-input" data-type="voltage" data-default="1">
+            <input type="number" id="vin2" placeholder="e.g. 12" step="any" min="0">
+            <select id="vin2-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="vout2">Target Vout</label>
+          <div class="unit-input" data-type="voltage" data-default="1">
+            <input type="number" id="vout2" placeholder="e.g. 3.3" step="any" min="0">
+            <select id="vout2-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="r1b">R1</label>
+          <div class="unit-input" data-type="resistance" data-default="1">
+            <input type="number" id="r1b" placeholder="e.g. 10000" step="any" min="0">
+            <select id="r1b-unit"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="error" id="err-r2">⚠ Check your values — Vout must be less than Vin.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcR2()">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearR2()">Clear</button>
+      </div>
+
+      <div class="results" id="res-r2">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-r2"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function fmt(n, unit='') {
+  if (n === null || isNaN(n)) return '—';
+  let s;
+  if (unit === 'Ω') {
+    if (n >= 1e6) s = (n/1e6).toPrecision(4) + ' MΩ';
+    else if (n >= 1e3) s = (n/1e3).toPrecision(4) + ' kΩ';
+    else s = parseFloat(n.toPrecision(5)) + ' Ω';
+  } else {
+    s = parseFloat(n.toPrecision(5)) + (unit ? ' '+unit : '');
+  }
+  return s;
+}
+
+function showMode(mode) {
+  document.getElementById('mode-vout').style.display = mode === 'vout' ? '' : 'none';
+  document.getElementById('mode-r2').style.display  = mode === 'r2'   ? '' : 'none';
+  document.getElementById('tab-vout').className = mode === 'vout' ? 'btn btn-primary' : 'btn btn-secondary';
+  document.getElementById('tab-r2').className   = mode === 'r2'   ? 'btn btn-primary' : 'btn btn-secondary';
+}
+
+function calcVout() {
+  const vin = unitVal('vin1');
+  const r1  = unitVal('r1a');
+  const r2  = unitVal('r2a');
+  const err = document.getElementById('err-vout');
+  err.classList.remove('visible');
+
+  if ([vin,r1,r2].some(isNaN) || r1 <= 0 || r2 <= 0) { err.classList.add('visible'); return; }
+
+  const vout = vin * r2 / (r1 + r2);
+  const ratio = vout / vin;
+  const current = vin / (r1 + r2);
+  const power = vin * current;
+
+  document.getElementById('grid-vout').innerHTML = `
+    <div class="result-item"><div class="result-label">V<sub>out</sub></div><div class="result-value">${fmt(vout,'V')}</div></div>
+    <div class="result-item"><div class="result-label">Ratio (Vout/Vin)</div><div class="result-value">${parseFloat(ratio.toPrecision(4))}</div></div>
+    <div class="result-item"><div class="result-label">Divider Current</div><div class="result-value">${fmt(current,'A')}</div></div>
+    <div class="result-item"><div class="result-label">Total Power</div><div class="result-value">${fmt(power,'W')}</div></div>
+  `;
+  document.getElementById('res-vout').classList.add('visible');
+}
+
+function calcR2() {
+  const vin  = unitVal('vin2');
+  const vout = unitVal('vout2');
+  const r1   = unitVal('r1b');
+  const err  = document.getElementById('err-r2');
+  err.classList.remove('visible');
+
+  if ([vin,vout,r1].some(isNaN) || vout >= vin || vout <= 0 || r1 <= 0) { err.classList.add('visible'); return; }
+
+  const r2 = r1 * vout / (vin - vout);
+  const current = vin / (r1 + r2);
+
+  document.getElementById('grid-r2').innerHTML = `
+    <div class="result-item"><div class="result-label">R2</div><div class="result-value">${fmt(r2,'Ω')}</div></div>
+    <div class="result-item"><div class="result-label">Divider Current</div><div class="result-value">${fmt(current,'A')}</div></div>
+    <div class="result-item"><div class="result-label">Total R</div><div class="result-value">${fmt(r1+r2,'Ω')}</div></div>
+  `;
+  document.getElementById('res-r2').classList.add('visible');
+}
+
+function clearVout() {
+  ['vin1','r1a','r2a'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('res-vout').classList.remove('visible');
+  document.getElementById('err-vout').classList.remove('visible');
+}
+
+function clearR2() {
+  ['vin2','vout2','r1b'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('res-r2').classList.remove('visible');
+  document.getElementById('err-r2').classList.remove('visible');
+}
+</script>
+</body>
+</html>

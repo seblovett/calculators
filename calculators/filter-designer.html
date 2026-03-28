@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RC Filter Designer — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .attn-table td:first-child { font-weight: 600; color: var(--blue); }
+    .attn-bar-wrap { background: #e2e8f0; border-radius: 999px; height: 8px; margin-top: 4px; }
+    .attn-bar      { background: var(--blue); border-radius: 999px; height: 8px; transition: width .3s; }
+    .freq-check { display:flex; gap:.5rem; align-items:flex-end; }
+    .freq-check input { flex:1; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html" class="active">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+
+  <main class="main">
+    <div class="page-title">🎛️ RC Filter Designer</div>
+    <div class="page-subtitle">Design low-pass, high-pass, and band-pass first-order RC filters. Find cutoff frequency and attenuation at any target frequency.</div>
+
+    <!-- Filter Type -->
+    <div class="card">
+      <h2>Filter Type</h2>
+      <div class="form-grid">
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>Filter Type</label>
+          <select id="filter-type" onchange="switchFilter()">
+            <option value="lp">Low-Pass Filter</option>
+            <option value="hp">High-Pass Filter</option>
+            <option value="bp">Band-Pass (two cascaded RC stages)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Low-Pass ── -->
+    <div class="card filter-panel" id="panel-lp">
+      <h2>Low-Pass RC Filter</h2>
+      <div class="formula-block">f<sub>c</sub> = 1 / (2π R C) &nbsp;|&nbsp; |H(f)| = 1 / √(1 + (f/f<sub>c</sub>)²)</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="lp-r">Resistance (R)</label>
+          <div class="unit-input" data-type="resistance" data-default="1e3">
+            <input type="number" id="lp-r" placeholder="e.g. 10" step="any" min="0">
+            <select></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="lp-c">Capacitance (C)</label>
+          <div class="unit-input" data-type="capacitance" data-default="1e-9">
+            <input type="number" id="lp-c" placeholder="e.g. 100" step="any" min="0">
+            <select></select>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:.85rem;color:var(--text-muted);margin:1rem 0 .5rem;">Optional: check attenuation at a specific frequency</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="lp-ftarget">Target Frequency</label>
+          <div class="unit-input" data-type="frequency" data-default="1">
+            <input type="number" id="lp-ftarget" placeholder="e.g. 1000" step="any" min="0">
+            <select></select>
+          </div>
+        </div>
+      </div>
+      <div class="error" id="err-lp">⚠ Please enter valid R and C values.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcLP()">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearFilter('lp',['lp-r','lp-c','lp-ftarget'])">Clear</button>
+      </div>
+      <div class="results" id="res-lp">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-lp"></div>
+      </div>
+      <div class="info-box" style="margin-top:.85rem;">
+        💡 At f<sub>c</sub> the output is attenuated by −3 dB (≈ 70.7% of input). Each octave above f<sub>c</sub> adds another −6 dB roll-off (−20 dB/decade).
+      </div>
+    </div>
+
+    <!-- Attenuation table (LP) -->
+    <div class="card" id="lp-table-card" style="display:none;">
+      <h2>Attenuation vs. Frequency (Low-Pass)</h2>
+      <table class="data-table attn-table" id="lp-table">
+        <thead>
+          <tr><th>Freq / f<sub>c</sub></th><th>Frequency</th><th>Gain (V/V)</th><th>Attenuation (dB)</th><th>Pass</th></tr>
+        </thead>
+        <tbody id="lp-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- ── High-Pass ── -->
+    <div class="card filter-panel" id="panel-hp" style="display:none;">
+      <h2>High-Pass RC Filter</h2>
+      <div class="formula-block">f<sub>c</sub> = 1 / (2π R C) &nbsp;|&nbsp; |H(f)| = (f/f<sub>c</sub>) / √(1 + (f/f<sub>c</sub>)²)</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="hp-r">Resistance (R)</label>
+          <div class="unit-input" data-type="resistance" data-default="1e3">
+            <input type="number" id="hp-r" placeholder="e.g. 10" step="any" min="0">
+            <select></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="hp-c">Capacitance (C)</label>
+          <div class="unit-input" data-type="capacitance" data-default="1e-9">
+            <input type="number" id="hp-c" placeholder="e.g. 100" step="any" min="0">
+            <select></select>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:.85rem;color:var(--text-muted);margin:1rem 0 .5rem;">Optional: check attenuation at a specific frequency</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="hp-ftarget">Target Frequency</label>
+          <div class="unit-input" data-type="frequency" data-default="1">
+            <input type="number" id="hp-ftarget" placeholder="e.g. 100" step="any" min="0">
+            <select></select>
+          </div>
+        </div>
+      </div>
+      <div class="error" id="err-hp">⚠ Please enter valid R and C values.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcHP()">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearFilter('hp',['hp-r','hp-c','hp-ftarget'])">Clear</button>
+      </div>
+      <div class="results" id="res-hp">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-hp"></div>
+      </div>
+      <div class="info-box" style="margin-top:.85rem;">
+        💡 At f<sub>c</sub> the output is −3 dB. Each octave below f<sub>c</sub> adds another −6 dB (−20 dB/decade roll-off in the stop-band).
+      </div>
+    </div>
+
+    <!-- Attenuation table (HP) -->
+    <div class="card" id="hp-table-card" style="display:none;">
+      <h2>Attenuation vs. Frequency (High-Pass)</h2>
+      <table class="data-table attn-table" id="hp-table">
+        <thead>
+          <tr><th>Freq / f<sub>c</sub></th><th>Frequency</th><th>Gain (V/V)</th><th>Attenuation (dB)</th><th>Pass</th></tr>
+        </thead>
+        <tbody id="hp-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- ── Band-Pass ── -->
+    <div class="card filter-panel" id="panel-bp" style="display:none;">
+      <h2>Band-Pass Filter (HP + LP stages)</h2>
+      <div class="formula-block">f<sub>L</sub> = 1/(2πR<sub>HP</sub>C<sub>HP</sub>) &nbsp;|&nbsp; f<sub>H</sub> = 1/(2πR<sub>LP</sub>C<sub>LP</sub>)</div>
+      <p style="font-size:.85rem;color:var(--text-muted);margin:0 0 .85rem;">High-Pass stage (sets lower cutoff f<sub>L</sub>):</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="bp-rhp">R<sub>HP</sub></label>
+          <div class="unit-input" data-type="resistance" data-default="1e3"><input type="number" id="bp-rhp" placeholder="e.g. 47" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group">
+          <label for="bp-chp">C<sub>HP</sub></label>
+          <div class="unit-input" data-type="capacitance" data-default="1e-9"><input type="number" id="bp-chp" placeholder="e.g. 100" step="any" min="0"><select></select></div>
+        </div>
+      </div>
+      <p style="font-size:.85rem;color:var(--text-muted);margin:.85rem 0 .85rem;">Low-Pass stage (sets upper cutoff f<sub>H</sub>):</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="bp-rlp">R<sub>LP</sub></label>
+          <div class="unit-input" data-type="resistance" data-default="1e3"><input type="number" id="bp-rlp" placeholder="e.g. 4.7" step="any" min="0"><select></select></div>
+        </div>
+        <div class="form-group">
+          <label for="bp-clp">C<sub>LP</sub></label>
+          <div class="unit-input" data-type="capacitance" data-default="1e-9"><input type="number" id="bp-clp" placeholder="e.g. 10" step="any" min="0"><select></select></div>
+        </div>
+      </div>
+      <div class="error" id="err-bp">⚠ Please enter valid values and ensure f<sub>L</sub> &lt; f<sub>H</sub>.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcBP()">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearFilter('bp',['bp-rhp','bp-chp','bp-rlp','bp-clp'])">Clear</button>
+      </div>
+      <div class="results" id="res-bp">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-bp"></div>
+      </div>
+      <div class="info-box" style="margin-top:.85rem;">
+        💡 For a non-interacting design, use R<sub>LP</sub> &lt; R<sub>HP</sub> / 10 so the LP stage doesn't load the HP stage significantly.
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function switchFilter() {
+  const type = document.getElementById('filter-type').value;
+  document.querySelectorAll('.filter-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-' + type).style.display = '';
+  ['lp-table-card','hp-table-card'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
+function fmtFreq(f) {
+  if (f >= 1e6) return parseFloat((f/1e6).toPrecision(4)) + ' MHz';
+  if (f >= 1e3) return parseFloat((f/1e3).toPrecision(4)) + ' kHz';
+  return parseFloat(f.toPrecision(4)) + ' Hz';
+}
+
+function buildAttnTable(tbodyId, tableCardId, fc, isLP) {
+  const ratios = [0.01, 0.1, 0.5, 1, 2, 5, 10, 100];
+  const rows = ratios.map(r => {
+    const f = r * fc;
+    const gain = isLP
+      ? 1 / Math.sqrt(1 + r*r)
+      : r / Math.sqrt(1 + r*r);
+    const db = 20 * Math.log10(gain);
+    const pct = gain * 100;
+    const pass = isLP ? (r <= 1) : (r >= 1);
+    return `<tr>
+      <td>${r}× f<sub>c</sub></td>
+      <td>${fmtFreq(f)}</td>
+      <td>${parseFloat(gain.toPrecision(3))}</td>
+      <td>${parseFloat(db.toPrecision(3))} dB</td>
+      <td>
+        <div class="attn-bar-wrap"><div class="attn-bar" style="width:${pct.toFixed(1)}%;background:${pass?'var(--blue)':'#f87171'}"></div></div>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById(tbodyId).innerHTML = rows;
+  document.getElementById(tableCardId).style.display = '';
+}
+
+function calcLP() {
+  const R = unitVal('lp-r');
+  const C = unitVal('lp-c');
+  document.getElementById('err-lp').classList.remove('visible');
+  if (isNaN(R) || isNaN(C) || R <= 0 || C <= 0) { document.getElementById('err-lp').classList.add('visible'); return; }
+
+  const fc = 1 / (2 * Math.PI * R * C);
+  const tau = R * C;
+  const items = [
+    ['Cutoff Freq (f<sub>c</sub>)', fmtFreq(fc)],
+    ['Time Constant (τ)', formatTau(tau)],
+    ['−3 dB Point', fmtFreq(fc)],
+    ['Roll-off', '−20 dB/decade'],
+  ];
+
+  const ft = unitVal('lp-ftarget');
+  if (!isNaN(ft) && ft > 0) {
+    const ratio = ft / fc;
+    const gain = 1 / Math.sqrt(1 + ratio*ratio);
+    const db = 20 * Math.log10(gain);
+    items.push(['Gain @ ' + fmtFreq(ft), parseFloat(gain.toPrecision(3)) + ' V/V']);
+    items.push(['Attn @ ' + fmtFreq(ft), parseFloat(db.toPrecision(3)) + ' dB']);
+  }
+
+  document.getElementById('grid-lp').innerHTML = items.map(([l,v]) =>
+    `<div class="result-item"><div class="result-label">${l}</div><div class="result-value">${v}</div></div>`).join('');
+  document.getElementById('res-lp').classList.add('visible');
+  buildAttnTable('lp-tbody','lp-table-card', fc, true);
+}
+
+function calcHP() {
+  const R = unitVal('hp-r');
+  const C = unitVal('hp-c');
+  document.getElementById('err-hp').classList.remove('visible');
+  if (isNaN(R) || isNaN(C) || R <= 0 || C <= 0) { document.getElementById('err-hp').classList.add('visible'); return; }
+
+  const fc = 1 / (2 * Math.PI * R * C);
+  const tau = R * C;
+  const items = [
+    ['Cutoff Freq (f<sub>c</sub>)', fmtFreq(fc)],
+    ['Time Constant (τ)', formatTau(tau)],
+    ['−3 dB Point', fmtFreq(fc)],
+    ['Roll-off', '−20 dB/decade (below f<sub>c</sub>)'],
+  ];
+
+  const ft = unitVal('hp-ftarget');
+  if (!isNaN(ft) && ft > 0) {
+    const ratio = ft / fc;
+    const gain = ratio / Math.sqrt(1 + ratio*ratio);
+    const db = 20 * Math.log10(gain);
+    items.push(['Gain @ ' + fmtFreq(ft), parseFloat(gain.toPrecision(3)) + ' V/V']);
+    items.push(['Attn @ ' + fmtFreq(ft), parseFloat(db.toPrecision(3)) + ' dB']);
+  }
+
+  document.getElementById('grid-hp').innerHTML = items.map(([l,v]) =>
+    `<div class="result-item"><div class="result-label">${l}</div><div class="result-value">${v}</div></div>`).join('');
+  document.getElementById('res-hp').classList.add('visible');
+  buildAttnTable('hp-tbody','hp-table-card', fc, false);
+}
+
+function calcBP() {
+  const Rhp = unitVal('bp-rhp');
+  const Chp = unitVal('bp-chp');
+  const Rlp = unitVal('bp-rlp');
+  const Clp = unitVal('bp-clp');
+  const err = document.getElementById('err-bp');
+  err.classList.remove('visible');
+
+  if ([Rhp,Chp,Rlp,Clp].some(v => isNaN(v) || v <= 0)) { err.classList.add('visible'); return; }
+
+  const fL = 1 / (2 * Math.PI * Rhp * Chp);
+  const fH = 1 / (2 * Math.PI * Rlp * Clp);
+
+  if (fL >= fH) { err.classList.add('visible'); return; }
+
+  const bw = fH - fL;
+  const fc_geom = Math.sqrt(fL * fH);
+  const Q = fc_geom / bw;
+
+  const items = [
+    ['Lower Cutoff (f<sub>L</sub>)', fmtFreq(fL)],
+    ['Upper Cutoff (f<sub>H</sub>)', fmtFreq(fH)],
+    ['Geometric Centre (f<sub>0</sub>)', fmtFreq(fc_geom)],
+    ['Bandwidth', fmtFreq(bw)],
+    ['Q Factor', parseFloat(Q.toPrecision(3))],
+    ['Pass-band Gain', '≈ −6 dB max (two stages)'],
+  ];
+
+  document.getElementById('grid-bp').innerHTML = items.map(([l,v]) =>
+    `<div class="result-item"><div class="result-label">${l}</div><div class="result-value">${v}</div></div>`).join('');
+  document.getElementById('res-bp').classList.add('visible');
+}
+
+function formatTau(tau) {
+  if (tau < 1e-6) return parseFloat((tau*1e9).toPrecision(4)) + ' ns';
+  if (tau < 1e-3) return parseFloat((tau*1e6).toPrecision(4)) + ' µs';
+  if (tau < 1)    return parseFloat((tau*1e3).toPrecision(4)) + ' ms';
+  return parseFloat(tau.toPrecision(4)) + ' s';
+}
+
+function clearFilter(prefix, fields) {
+  fields.forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('res-' + prefix).classList.remove('visible');
+  document.getElementById('err-' + prefix).classList.remove('visible');
+  const tc = document.getElementById(prefix + '-table-card');
+  if (tc) tc.style.display = 'none';
+}
+</script>
+</body>
+</html>

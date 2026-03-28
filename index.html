@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engineering Tools</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .hero {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+      color: #fff;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .5rem; }
+    .hero p { font-size: 1rem; opacity: .85; max-width: 480px; margin: 0 auto; }
+    .home-layout { max-width: 960px; margin: 0 auto; padding: 0 1.5rem 3rem; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="index.html" class="active">Home</a>
+    <a href="calculators/ohms-law.html">Electrical</a>
+    <a href="calculators/unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <h1>Engineering Tools</h1>
+  <p>A collection of handy calculators and reference tools for electrical engineering and general calculations.</p>
+</div>
+
+<div class="home-layout">
+
+  <div class="section-heading">⚡ Electrical &amp; Electronics</div>
+  <div class="tool-grid">
+    <a class="tool-card" href="calculators/ohms-law.html">
+      <div class="tool-card-icon">🔋</div>
+      <div class="tool-card-title">Ohm's Law</div>
+      <div class="tool-card-desc">Solve for voltage, current, resistance, or power from any two known values.</div>
+    </a>
+    <a class="tool-card" href="calculators/voltage-divider.html">
+      <div class="tool-card-icon">〽️</div>
+      <div class="tool-card-title">Voltage Divider</div>
+      <div class="tool-card-desc">Calculate output voltage and resistor values for resistive voltage divider circuits.</div>
+    </a>
+    <a class="tool-card" href="calculators/rc-time-constant.html">
+      <div class="tool-card-icon">📈</div>
+      <div class="tool-card-title">RC Time Constant</div>
+      <div class="tool-card-desc">Find the time constant τ, charge/discharge times, and cutoff frequency of RC circuits.</div>
+    </a>
+    <a class="tool-card" href="calculators/led-resistor.html">
+      <div class="tool-card-icon">💡</div>
+      <div class="tool-card-title">LED Resistor</div>
+      <div class="tool-card-desc">Calculate the correct current-limiting resistor value for an LED circuit.</div>
+    </a>
+    <a class="tool-card" href="calculators/potential-divider.html">
+      <div class="tool-card-icon">⚖️</div>
+      <div class="tool-card-title">Potential Divider</div>
+      <div class="tool-card-desc">Unloaded and loaded potential divider — including loading error, design mode, and current sensing.</div>
+    </a>
+    <a class="tool-card" href="calculators/pcb-trace-width.html">
+      <div class="tool-card-icon">🖥️</div>
+      <div class="tool-card-title">PCB Trace Width</div>
+      <div class="tool-card-desc">IPC-2221 calculator for minimum trace width given current, copper weight, and temperature rise.</div>
+    </a>
+    <a class="tool-card" href="calculators/pcb-impedance.html">
+      <div class="tool-card-icon">📡</div>
+      <div class="tool-card-title">PCB Impedance</div>
+      <div class="tool-card-desc">Controlled impedance for microstrip, stripline, and differential pairs. Includes substrate presets.</div>
+    </a>
+    <a class="tool-card" href="calculators/op-amp.html">
+      <div class="tool-card-icon">🔊</div>
+      <div class="tool-card-title">Op-Amp Configurations</div>
+      <div class="tool-card-desc">Gain and output voltage for inverting, non-inverting, summing, differential, and buffer circuits.</div>
+    </a>
+    <a class="tool-card" href="calculators/filter-designer.html">
+      <div class="tool-card-icon">🎛️</div>
+      <div class="tool-card-title">RC Filter Designer</div>
+      <div class="tool-card-desc">Design low-pass, high-pass, and band-pass RC filters. Cutoff frequency and attenuation table.</div>
+    </a>
+    <a class="tool-card" href="calculators/battery-life.html">
+      <div class="tool-card-icon">🔋</div>
+      <div class="tool-card-title">Battery Life Estimator</div>
+      <div class="tool-card-desc">Estimate runtime from capacity, DoD, and efficiency. Supports active/sleep duty-cycle mode.</div>
+    </a>
+  </div>
+
+  <div class="section-heading">📐 General &amp; Unit Conversions</div>
+  <div class="tool-grid">
+    <a class="tool-card" href="calculators/unit-converter.html">
+      <div class="tool-card-icon">🔄</div>
+      <div class="tool-card-title">Unit Converter</div>
+      <div class="tool-card-desc">Convert between units of length, mass, temperature, pressure, energy, and more.</div>
+    </a>
+    <a class="tool-card" href="calculators/wire-gauge.html">
+      <div class="tool-card-icon">🔌</div>
+      <div class="tool-card-title">AWG Wire Gauge</div>
+      <div class="tool-card-desc">Reference table for American Wire Gauge: diameter, area, resistance, and current ratings.</div>
+    </a>
+    <a class="tool-card" href="calculators/e-series.html">
+      <div class="tool-card-icon">🔢</div>
+      <div class="tool-card-title">E Series Preferred Numbers</div>
+      <div class="tool-card-desc">IEC 60063 standard values (E6–E192) for resistors and capacitors, with nearest-value finder.</div>
+    </a>
+    <a class="tool-card" href="calculators/dbm-converter.html">
+      <div class="tool-card-icon">📶</div>
+      <div class="tool-card-title">dBm / Watts / Volts</div>
+      <div class="tool-card-desc">Convert between dBm, milliwatts, watts, and RMS voltage across 50 Ω, 75 Ω, 600 Ω, and custom impedances.</div>
+    </a>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PCB Trace Width Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .layer-toggle { display:flex; gap:.5rem; margin-bottom:1rem; }
+    .layer-btn {
+      flex:1; padding:.55rem; text-align:center; border-radius:var(--radius);
+      border:1px solid var(--border); background:var(--white); cursor:pointer;
+      font-size:.875rem; font-weight:600; transition:.12s;
+    }
+    .layer-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+    .cross-section {
+      background:#f1f5f9; border:1px solid var(--border); border-radius:var(--radius);
+      padding:1rem; text-align:center; margin-bottom:1rem;
+    }
+    .trace-svg { width:100%; max-width:360px; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html" class="active">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+
+  <main class="main">
+    <div class="page-title">🖥️ PCB Trace Width Calculator</div>
+    <div class="page-subtitle">Based on IPC-2221 standard. Calculate minimum trace width to carry a given current with an acceptable temperature rise.</div>
+
+    <div class="card">
+      <h2>Layer Type</h2>
+      <div class="layer-toggle">
+        <button class="layer-btn active" id="btn-ext" onclick="setLayer('external')">External (Outer) Layer</button>
+        <button class="layer-btn" id="btn-int" onclick="setLayer('internal')">Internal (Inner) Layer</button>
+      </div>
+      <p style="font-size:.83rem;color:var(--text-muted);" id="layer-note">
+        External traces have better heat dissipation (k = 0.048). Internal traces run hotter (k = 0.024).
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Parameters</h2>
+      <div class="formula-block">
+        IPC-2221: &nbsp; W = A / (Tcu × 1.378) &nbsp;|&nbsp; A = [I / (k × ΔT⁰·⁴⁴)]^(1/0.725)
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="current">Current (I)</label>
+          <div class="unit-input" data-type="current" data-default="1">
+            <input type="number" id="current" placeholder="e.g. 2" step="any" min="0">
+            <select id="current-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="temp-rise">Max Temp Rise (ΔT)</label>
+          <div class="input-wrap">
+            <input type="number" id="temp-rise" value="10" step="any" min="1">
+            <span class="input-unit">°C</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="cu-weight">Copper Weight</label>
+          <select id="cu-weight">
+            <option value="0.5">0.5 oz/ft² (~17.5 µm)</option>
+            <option value="1" selected>1 oz/ft² (~35 µm)</option>
+            <option value="2">2 oz/ft² (~70 µm)</option>
+            <option value="3">3 oz/ft² (~105 µm)</option>
+            <option value="4">4 oz/ft² (~140 µm)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="trace-length">Trace Length (optional)</label>
+          <div class="unit-input" data-type="distance" data-default="1e-3">
+            <input type="number" id="trace-length" placeholder="e.g. 50" step="any" min="0">
+            <select id="trace-length-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="ambient">Ambient Temperature</label>
+          <div class="input-wrap">
+            <input type="number" id="ambient" value="25" step="any">
+            <span class="input-unit">°C</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="error" id="err-pcb">⚠ Please enter a valid current value.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcTrace()">Calculate</button>
+        <button class="btn btn-secondary" onclick="clearTrace()">Clear</button>
+      </div>
+
+      <div class="results" id="res-pcb">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-pcb"></div>
+        <div id="length-results" style="margin-top:.65rem;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Quick Reference — Copper Weights</h2>
+      <table class="data-table">
+        <thead>
+          <tr><th>Copper Weight</th><th>Thickness (µm)</th><th>Thickness (mils)</th><th>Typical Use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>0.5 oz/ft²</td><td>17.5 µm</td><td>0.69 mil</td><td>Fine-pitch signal traces</td></tr>
+          <tr><td>1 oz/ft²</td><td>35 µm</td><td>1.37 mil</td><td>Standard — most boards</td></tr>
+          <tr><td>2 oz/ft²</td><td>70 µm</td><td>2.74 mil</td><td>Power traces, high current</td></tr>
+          <tr><td>3 oz/ft²</td><td>105 µm</td><td>4.11 mil</td><td>High-power applications</td></tr>
+          <tr><td>4 oz/ft²</td><td>140 µm</td><td>5.48 mil</td><td>Heavy power / bus bars</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:.85rem;">
+        ⚠ IPC-2221 is conservative and based on empirical data from older boards. Real-world capacity may be higher, especially with pours, vias, or heatsinking. Always add margin for safety-critical applications and verify with your PCB manufacturer's capabilities.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Current vs. Width Reference (1 oz, ΔT = 10 °C)</h2>
+      <table class="data-table" id="ref-table">
+        <thead>
+          <tr><th>Current (A)</th><th>External Width (mm)</th><th>External Width (mils)</th><th>Internal Width (mm)</th><th>Internal Width (mils)</th></tr>
+        </thead>
+        <tbody id="ref-body"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+let layerK = 0.048; // external
+
+function setLayer(type) {
+  if (type === 'external') {
+    layerK = 0.048;
+    document.getElementById('btn-ext').className = 'layer-btn active';
+    document.getElementById('btn-int').className = 'layer-btn';
+    document.getElementById('layer-note').textContent = 'External traces have better heat dissipation (k = 0.048).';
+  } else {
+    layerK = 0.024;
+    document.getElementById('btn-int').className = 'layer-btn active';
+    document.getElementById('btn-ext').className = 'layer-btn';
+    document.getElementById('layer-note').textContent = 'Internal traces are enclosed in dielectric — they run hotter (k = 0.024).';
+  }
+}
+
+// IPC-2221: width in mils, return mils
+function ipcWidth(I, dT, oz, k) {
+  const A = Math.pow(I / (k * Math.pow(dT, 0.44)), 1/0.725); // mils²
+  return A / (oz * 1.378); // mils
+}
+
+function fmtMm(mm) { return parseFloat(mm.toPrecision(4)) + ' mm'; }
+function fmtMil(mil) { return parseFloat(mil.toPrecision(4)) + ' mil'; }
+
+function calcTrace() {
+  const I   = unitVal('current');
+  const dT  = parseFloat(document.getElementById('temp-rise').value) || 10;
+  const oz  = parseFloat(document.getElementById('cu-weight').value);
+  const len = unitVal('trace-length') * 1000;
+  const amb = parseFloat(document.getElementById('ambient').value) || 25;
+  const err = document.getElementById('err-pcb');
+  err.classList.remove('visible');
+
+  if (isNaN(I) || I <= 0) { err.classList.add('visible'); return; }
+
+  const w_mils = ipcWidth(I, dT, oz, layerK);
+  const w_mm   = w_mils * 0.0254;
+  const T_m    = oz * 35e-6; // copper thickness in metres
+  const maxTemp = amb + dT;
+
+  // Resistance (ρ_Cu = 1.724e-8 Ω·m at 20°C, corrected for temperature)
+  const rho_20 = 1.724e-8;
+  const rho    = rho_20 * (1 + 0.00393 * (maxTemp - 20));
+  const w_m    = w_mm / 1000;
+  const res_per_m = rho / (w_m * T_m); // Ω/m
+
+  const grid = document.getElementById('grid-pcb');
+  grid.innerHTML = `
+    <div class="result-item"><div class="result-label">Min Width</div><div class="result-value">${fmtMm(w_mm)}</div></div>
+    <div class="result-item"><div class="result-label">Min Width</div><div class="result-value">${fmtMil(w_mils)}</div></div>
+    <div class="result-item"><div class="result-label">Cu Thickness</div><div class="result-value">${(oz*35).toFixed(1)}<span class="unit">µm</span></div></div>
+    <div class="result-item"><div class="result-label">Max Trace Temp</div><div class="result-value">${maxTemp.toFixed(1)}<span class="unit">°C</span></div></div>
+    <div class="result-item"><div class="result-label">Resistance</div><div class="result-value">${(res_per_m*1000).toPrecision(3)}<span class="unit">mΩ/m</span></div></div>
+  `;
+
+  const lenRes = document.getElementById('length-results');
+  if (!isNaN(len) && len > 0) {
+    const R_total = res_per_m * (len/1000);
+    const V_drop  = I * R_total;
+    const P_loss  = I * I * R_total;
+    lenRes.innerHTML = `
+      <div class="result-grid">
+        <div class="result-item"><div class="result-label">Total Resistance</div><div class="result-value">${(R_total*1000).toPrecision(3)}<span class="unit">mΩ</span></div></div>
+        <div class="result-item"><div class="result-label">Voltage Drop</div><div class="result-value">${(V_drop*1000).toPrecision(3)}<span class="unit">mV</span></div></div>
+        <div class="result-item"><div class="result-label">Power Loss</div><div class="result-value">${(P_loss*1000).toPrecision(3)}<span class="unit">mW</span></div></div>
+      </div>`;
+  } else {
+    lenRes.innerHTML = '';
+  }
+
+  document.getElementById('res-pcb').classList.add('visible');
+}
+
+function clearTrace() {
+  ['current','trace-length'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('res-pcb').classList.remove('visible');
+  document.getElementById('err-pcb').classList.remove('visible');
+}
+
+// Build reference table
+function buildRefTable() {
+  const currents = [0.5, 1, 1.5, 2, 3, 4, 5, 7, 10, 15, 20];
+  const body = document.getElementById('ref-body');
+  body.innerHTML = currents.map(I => {
+    const wExt = ipcWidth(I, 10, 1, 0.048);
+    const wInt = ipcWidth(I, 10, 1, 0.024);
+    return `<tr>
+      <td><strong>${I} A</strong></td>
+      <td>${(wExt*0.0254).toPrecision(3)} mm</td>
+      <td>${wExt.toPrecision(3)} mil</td>
+      <td>${(wInt*0.0254).toPrecision(3)} mm</td>
+      <td>${wInt.toPrecision(3)} mil</td>
+    </tr>`;
+  }).join('');
+}
+buildRefTable();
+</script>
+</body>
+</html>
