@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Via Current Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .layer-toggle { display:flex; gap:.5rem; margin-bottom:1.25rem; }
+    .layer-btn {
+      flex:1; padding:.55rem; text-align:center; border-radius:var(--radius);
+      border:1px solid var(--border); background:var(--white); cursor:pointer;
+      font-size:.875rem; font-weight:600; transition:.12s;
+    }
+    .layer-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+    .schematic-wrap {
+      background:#f8fafc; border:1px solid var(--border);
+      border-radius:var(--radius); padding:1rem 1.5rem;
+      display:flex; align-items:center; justify-content:center;
+      margin-bottom:1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html" class="active">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+
+  <main class="main">
+    <div class="page-title">🕳️ Via Current Calculator</div>
+    <div class="page-subtitle">Calculate current capacity, resistance, and inductance of a PCB via barrel. Based on IPC-2221.</div>
+
+    <div class="card">
+      <h2>Layer Type</h2>
+      <div class="layer-toggle">
+        <button class="layer-btn active" id="btn-ext" onclick="setLayer('external')">External (Outer) Layer</button>
+        <button class="layer-btn" id="btn-int" onclick="setLayer('internal')">Internal (Inner) Layer</button>
+      </div>
+      <p style="font-size:.83rem;color:var(--text-muted);" id="layer-note">
+        External vias have better heat dissipation (k = 0.048). Internal vias run hotter (k = 0.024).
+      </p>
+
+      <!-- Schematic -->
+      <div class="schematic-wrap">
+        <svg viewBox="0 0 260 160" width="240" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">
+          <!-- Board outline -->
+          <rect x="20" y="20" width="220" height="120" rx="4" fill="#e8f4e8" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="6,3"/>
+          <!-- Copper pads top -->
+          <ellipse cx="130" cy="28" rx="28" ry="7" fill="#f59e0b" stroke="#92400e" stroke-width="1.2"/>
+          <!-- Via barrel -->
+          <rect x="118" y="20" width="24" height="120" fill="#d1fae5" stroke="#059669" stroke-width="1.5"/>
+          <!-- Drill hole -->
+          <rect x="122" y="20" width="16" height="120" fill="#f8fafc" stroke="none"/>
+          <!-- Plating indication -->
+          <rect x="118" y="20" width="4" height="120" fill="#f59e0b" stroke="none"/>
+          <rect x="138" y="20" width="4" height="120" fill="#f59e0b" stroke="none"/>
+          <!-- Copper pads bottom -->
+          <ellipse cx="130" cy="132" rx="28" ry="7" fill="#f59e0b" stroke="#92400e" stroke-width="1.2"/>
+          <!-- Labels -->
+          <text x="168" y="35" font-size="11" fill="#1e293b" font-weight="600">Pad (top)</text>
+          <!-- Drill dia arrow -->
+          <line x1="122" y1="75" x2="138" y2="75" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arr)" marker-start="url(#arr2)"/>
+          <text x="130" y="70" text-anchor="middle" font-size="10" fill="#2563eb">d</text>
+          <!-- Board thickness arrow -->
+          <line x1="10" y1="20" x2="10" y2="140" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#arr3)" marker-start="url(#arr4)"/>
+          <text x="5" y="83" text-anchor="middle" font-size="10" fill="#7c3aed" transform="rotate(-90,5,83)">h</text>
+          <!-- Plating label -->
+          <text x="115" y="55" text-anchor="end" font-size="10" fill="#d97706">t</text>
+          <defs>
+            <marker id="arr" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="#2563eb"/></marker>
+            <marker id="arr2" markerWidth="5" markerHeight="5" refX="0" refY="2.5" orient="auto"><path d="M5,0 L0,2.5 L5,5" fill="#2563eb"/></marker>
+            <marker id="arr3" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="#7c3aed"/></marker>
+            <marker id="arr4" markerWidth="5" markerHeight="5" refX="0" refY="2.5" orient="auto"><path d="M5,0 L0,2.5 L5,5" fill="#7c3aed"/></marker>
+          </defs>
+        </svg>
+      </div>
+
+      <div class="formula-block">A = π × d × t &nbsp;|&nbsp; I = k × ΔT<sup>0.44</sup> × A<sup>0.725</sup></div>
+      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">
+        A is the barrel cross-section area in mil² (circumference × plating thickness). k = 0.048 external, 0.024 internal.
+      </p>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="drill-dia">Drill Diameter (d)</label>
+          <div class="unit-input">
+            <input type="number" id="drill-dia" placeholder="e.g. 0.3" step="any" min="0" oninput="calc()">
+            <select id="drill-dia-unit" onchange="calc()">
+              <option value="25.4">mm → mil ×39.37</option>
+              <option value="1" selected>mil</option>
+              <option value="0.001">µm</option>
+            </select>
+          </div>
+          <span class="field-hint" id="drill-dia-hint"></span>
+        </div>
+        <div class="form-group">
+          <label for="plating">Plating Thickness (t)</label>
+          <div class="unit-input">
+            <input type="number" id="plating" placeholder="e.g. 1" step="any" min="0" oninput="calc()">
+            <select id="plating-unit" onchange="calc()">
+              <option value="39.3701" selected>mm</option>
+              <option value="1">mil</option>
+              <option value="0.0393701">µm</option>
+            </select>
+          </div>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-top:.25rem;">Typical: 0.025 mm (1 mil) per IPC class 2</p>
+        </div>
+        <div class="form-group">
+          <label for="board-h">Board Thickness (h)</label>
+          <div class="unit-input">
+            <input type="number" id="board-h" placeholder="e.g. 1.6" step="any" min="0" oninput="calc()">
+            <select id="board-h-unit" onchange="calc()">
+              <option value="1000" selected>mm</option>
+              <option value="25.4">in</option>
+              <option value="1">mil</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="delta-t">Allowed ΔT (°C)</label>
+          <div class="unit-input" style="border:none;">
+            <input type="number" id="delta-t" placeholder="e.g. 10" value="10" step="any" min="0" oninput="calc()"
+                   style="border:1px solid var(--border);border-radius:var(--radius);padding:.5rem .75rem;width:100%;font-size:.95rem;">
+          </div>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-top:.25rem;">Typical: 10 °C (conservative), 20–40 °C acceptable</p>
+        </div>
+      </div>
+
+      <div class="error" id="err-via">⚠ Please enter drill diameter, plating thickness, and board thickness.</div>
+
+      <div class="results" id="res-via">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-via"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Notes</h2>
+      <p style="font-size:.875rem;color:var(--text-muted);">
+        The IPC-2221 formula gives a conservative estimate of current-carrying capacity based on the via barrel cross-section area. Real-world capacity may be higher depending on board copper pour, thermal vias, and airflow. The resistance formula uses copper resistivity ρ = 1.724 × 10⁻⁸ Ω·m. Via inductance is estimated from the Wheeler approximation: L ≈ (µ₀ h / 2π) × ln(4h/d).
+      </p>
+    </div>
+
+  </main>
+</div>
+
+<script>
+let layerK = 0.048;
+
+function setLayer(type) {
+  const ext = type === 'external';
+  document.getElementById('btn-ext').className = 'layer-btn' + (ext ? ' active' : '');
+  document.getElementById('btn-int').className = 'layer-btn' + (!ext ? ' active' : '');
+  document.getElementById('layer-note').textContent = ext
+    ? 'External vias have better heat dissipation (k = 0.048). Internal vias run hotter (k = 0.024).'
+    : 'Internal vias (k = 0.024). They dissipate less heat — derate further for conservative designs.';
+  layerK = ext ? 0.048 : 0.024;
+  calc();
+}
+
+function fmtSI(v, unit) {
+  if (!isFinite(v) || v === 0) return '0 ' + unit;
+  const abs = Math.abs(v);
+  if (abs >= 1) return parseFloat(v.toPrecision(4)) + ' ' + unit;
+  if (abs >= 1e-3) return parseFloat((v*1e3).toPrecision(4)) + ' m' + unit;
+  if (abs >= 1e-6) return parseFloat((v*1e6).toPrecision(4)) + ' µ' + unit;
+  if (abs >= 1e-9) return parseFloat((v*1e9).toPrecision(4)) + ' n' + unit;
+  return v.toExponential(3) + ' ' + unit;
+}
+
+function fmtCurrent(v) {
+  if (!isFinite(v)) return '—';
+  if (v >= 1) return parseFloat(v.toPrecision(4)) + ' A';
+  return parseFloat((v*1e3).toPrecision(4)) + ' mA';
+}
+
+function getVal(id, unitId) {
+  const v = parseFloat(document.getElementById(id).value);
+  const u = parseFloat(document.getElementById(unitId).value);
+  return v * u; // returns mils
+}
+
+function calc() {
+  const drillMils  = parseFloat(document.getElementById('drill-dia').value) *
+                     parseFloat(document.getElementById('drill-dia-unit').value);
+  const platMils   = parseFloat(document.getElementById('plating').value) *
+                     parseFloat(document.getElementById('plating-unit').value);
+  const boardMils  = parseFloat(document.getElementById('board-h').value) *
+                     parseFloat(document.getElementById('board-h-unit').value);
+  const dT         = parseFloat(document.getElementById('delta-t').value) || 10;
+
+  const err = document.getElementById('err-via');
+  err.classList.remove('visible');
+
+  if ([drillMils, platMils, boardMils].some(x => !isFinite(x) || x <= 0)) {
+    err.classList.add('visible');
+    document.getElementById('res-via').classList.remove('visible');
+    return;
+  }
+
+  // IPC-2221 barrel area in mil²
+  const A_mil2 = Math.PI * drillMils * platMils;
+
+  // Current capacity
+  const I = layerK * Math.pow(dT, 0.44) * Math.pow(A_mil2, 0.725);
+
+  // Via resistance — copper ρ = 1.724e-8 Ω·m
+  // Convert barrel dimensions to metres
+  const d_m = drillMils * 25.4e-6;   // drill dia in m
+  const t_m = platMils  * 25.4e-6;   // plating thickness in m
+  const h_m = boardMils * 25.4e-6;   // board thickness / via height in m
+  const rho  = 1.724e-8;             // Ω·m
+  const A_m2 = Math.PI * d_m * t_m;  // barrel wall cross-section in m²
+  const R    = rho * h_m / A_m2;     // Ω
+
+  // Via inductance (Wheeler approximation for a cylindrical conductor)
+  // L ≈ (µ₀ × h / 2π) × (ln(4h/d) + 0.5)
+  const mu0  = 4e-7 * Math.PI;
+  const L    = (mu0 * h_m / (2 * Math.PI)) * (Math.log(4 * h_m / d_m) + 0.5);
+
+  // Aspect ratio
+  const AR = boardMils / drillMils;
+
+  document.getElementById('grid-via').innerHTML = `
+    <div class="result-item"><div class="result-label">Barrel Area (A)</div><div class="result-value">${parseFloat(A_mil2.toPrecision(4))} mil²</div></div>
+    <div class="result-item"><div class="result-label">Current Capacity (ΔT=${dT}°C)</div><div class="result-value">${fmtCurrent(I)}</div></div>
+    <div class="result-item"><div class="result-label">Via Resistance</div><div class="result-value">${fmtSI(R,'Ω')}</div></div>
+    <div class="result-item"><div class="result-label">Via Inductance</div><div class="result-value">${fmtSI(L,'H')}</div></div>
+    <div class="result-item"><div class="result-label">Aspect Ratio (h/d)</div><div class="result-value">${parseFloat(AR.toPrecision(3)) + ':1'}</div></div>
+    <div class="result-item"><div class="result-label">Via Height</div><div class="result-value">${parseFloat((boardMils/39.3701).toPrecision(4))} mm</div></div>
+  `;
+  document.getElementById('res-via').classList.add('visible');
+}
+
+// Auto-set unit labels more descriptively
+document.getElementById('drill-dia-unit').innerHTML = `
+  <option value="39.3701">mm</option>
+  <option value="1" selected>mil</option>
+  <option value="0.0393701">µm</option>
+`;
+</script>
+</body>
+</html>

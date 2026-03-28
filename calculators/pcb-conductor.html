@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PCB Conductor Current — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .layer-toggle { display:flex; gap:.5rem; margin-bottom:1.25rem; }
+    .layer-btn {
+      flex:1; padding:.55rem; text-align:center; border-radius:var(--radius);
+      border:1px solid var(--border); background:var(--white); cursor:pointer;
+      font-size:.875rem; font-weight:600; transition:.12s;
+    }
+    .layer-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+    .schematic-wrap {
+      background:#f8fafc; border:1px solid var(--border);
+      border-radius:var(--radius); padding:1rem 1.5rem;
+      display:flex; align-items:center; justify-content:center;
+      margin-bottom:1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html" class="active">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+
+  <main class="main">
+    <div class="page-title">🔌 PCB Conductor Current</div>
+    <div class="page-subtitle">Given a trace geometry, find current capacity, resistance, voltage drop, and power dissipation. Based on IPC-2221.</div>
+
+    <div class="card">
+      <h2>Layer Type</h2>
+      <div class="layer-toggle">
+        <button class="layer-btn active" id="btn-ext" onclick="setLayer('external')">External (Outer) Layer</button>
+        <button class="layer-btn" id="btn-int" onclick="setLayer('internal')">Internal (Inner) Layer</button>
+      </div>
+      <p style="font-size:.83rem;color:var(--text-muted);" id="layer-note">
+        External traces dissipate heat to air (k = 0.048). Internal traces are thermally isolated (k = 0.024).
+      </p>
+
+      <!-- Cross-section schematic -->
+      <div class="schematic-wrap">
+        <svg viewBox="0 0 280 110" width="260" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">
+          <!-- FR4 substrate -->
+          <rect x="20" y="55" width="240" height="40" fill="#c8e6c9" stroke="#4caf50" stroke-width="1.2"/>
+          <text x="140" y="79" text-anchor="middle" font-size="11" fill="#2e7d32" font-weight="600">FR4 substrate</text>
+          <!-- Copper trace (cross-section) -->
+          <rect x="95" y="35" width="90" height="20" fill="#f59e0b" stroke="#92400e" stroke-width="1.5"/>
+          <text x="140" y="48" text-anchor="middle" font-size="11" fill="#78350f" font-weight="700">Copper trace</text>
+          <!-- Width arrow -->
+          <line x1="95" y1="23" x2="185" y2="23" stroke="#2563eb" stroke-width="1.5" marker-end="url(#aw)" marker-start="url(#aw2)"/>
+          <text x="140" y="18" text-anchor="middle" font-size="10" fill="#2563eb" font-weight="600">W (width)</text>
+          <!-- Thickness arrow -->
+          <line x1="195" y1="35" x2="195" y2="55" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#at)" marker-start="url(#at2)"/>
+          <text x="215" y="48" font-size="10" fill="#7c3aed" font-weight="600">T (Cu)</text>
+          <defs>
+            <marker id="aw"  markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="#2563eb"/></marker>
+            <marker id="aw2" markerWidth="5" markerHeight="5" refX="0" refY="2.5" orient="auto"><path d="M5,0 L0,2.5 L5,5" fill="#2563eb"/></marker>
+            <marker id="at"  markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="#7c3aed"/></marker>
+            <marker id="at2" markerWidth="5" markerHeight="5" refX="0" refY="2.5" orient="auto"><path d="M5,0 L0,2.5 L5,5" fill="#7c3aed"/></marker>
+          </defs>
+        </svg>
+      </div>
+
+      <div class="formula-block">A = W × T &nbsp;|&nbsp; I<sub>max</sub> = k × ΔT<sup>0.44</sup> × A<sup>0.725</sup></div>
+      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">A is cross-section in mil². k = 0.048 external, 0.024 internal (IPC-2221).</p>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="width">Trace Width (W)</label>
+          <div class="unit-input">
+            <input type="number" id="width" placeholder="e.g. 0.5" step="any" min="0" oninput="calc()">
+            <select id="width-unit" onchange="calc()">
+              <option value="39.3701" selected>mm</option>
+              <option value="1000">in</option>
+              <option value="1">mil</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="cu-oz">Copper Weight</label>
+          <div class="unit-input">
+            <input type="number" id="cu-oz" placeholder="e.g. 1" step="any" min="0" oninput="calc()">
+            <select id="cu-oz-unit" onchange="calc()">
+              <option value="1.378" selected>oz/ft²</option>
+              <option value="39.3701">mm</option>
+              <option value="1">mil</option>
+            </select>
+          </div>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-top:.25rem;">1 oz/ft² ≈ 35 µm ≈ 1.378 mil</p>
+        </div>
+        <div class="form-group">
+          <label for="length">Trace Length</label>
+          <div class="unit-input">
+            <input type="number" id="length" placeholder="e.g. 50" step="any" min="0" oninput="calc()">
+            <select id="length-unit" onchange="calc()">
+              <option value="39.3701" selected>mm</option>
+              <option value="1000">in</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="current">Actual Current (optional)</label>
+          <div class="unit-input">
+            <input type="number" id="current" placeholder="e.g. 2" step="any" min="0" oninput="calc()">
+            <select id="current-unit" onchange="calc()">
+              <option value="1" selected>A</option>
+              <option value="0.001">mA</option>
+            </select>
+          </div>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-top:.25rem;">Used to calculate voltage drop & power (if provided)</p>
+        </div>
+        <div class="form-group">
+          <label for="delta-t">Allowed ΔT (°C)</label>
+          <div class="unit-input" style="border:none;">
+            <input type="number" id="delta-t" placeholder="e.g. 10" value="10" step="any" min="0" oninput="calc()"
+                   style="border:1px solid var(--border);border-radius:var(--radius);padding:.5rem .75rem;width:100%;font-size:.95rem;">
+          </div>
+        </div>
+      </div>
+
+      <div class="error" id="err-cond">⚠ Please enter trace width and copper weight.</div>
+
+      <div class="results" id="res-cond">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-cond"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Copper Weight Reference</h2>
+      <table class="data-table">
+        <thead><tr><th>oz/ft²</th><th>Thickness (µm)</th><th>Thickness (mil)</th></tr></thead>
+        <tbody>
+          <tr><td>0.5 oz</td><td>17.5 µm</td><td>0.69 mil</td></tr>
+          <tr><td>1 oz</td><td>35 µm</td><td>1.38 mil</td></tr>
+          <tr><td>2 oz</td><td>70 µm</td><td>2.76 mil</td></tr>
+          <tr><td>3 oz</td><td>105 µm</td><td>4.13 mil</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+let layerK = 0.048;
+
+function setLayer(type) {
+  const ext = type === 'external';
+  document.getElementById('btn-ext').className = 'layer-btn' + (ext ? ' active' : '');
+  document.getElementById('btn-int').className = 'layer-btn' + (!ext ? ' active' : '');
+  document.getElementById('layer-note').textContent = ext
+    ? 'External traces dissipate heat to air (k = 0.048). Internal traces are thermally isolated (k = 0.024).'
+    : 'Internal traces (k = 0.024). They dissipate less heat — derate further for conservative designs.';
+  layerK = ext ? 0.048 : 0.024;
+  calc();
+}
+
+function fmtSI(v, unit) {
+  if (!isFinite(v)) return '—';
+  const abs = Math.abs(v);
+  if (abs === 0) return '0 ' + unit;
+  if (abs >= 1) return parseFloat(v.toPrecision(4)) + ' ' + unit;
+  if (abs >= 1e-3) return parseFloat((v*1e3).toPrecision(4)) + ' m' + unit;
+  if (abs >= 1e-6) return parseFloat((v*1e6).toPrecision(4)) + ' µ' + unit;
+  return v.toExponential(3) + ' ' + unit;
+}
+
+function calc() {
+  const wMils   = parseFloat(document.getElementById('width').value)   * parseFloat(document.getElementById('width-unit').value);
+  const tMils   = parseFloat(document.getElementById('cu-oz').value)   * parseFloat(document.getElementById('cu-oz-unit').value);
+  const lenMils = parseFloat(document.getElementById('length').value)  * parseFloat(document.getElementById('length-unit').value);
+  const iActual = parseFloat(document.getElementById('current').value) * parseFloat(document.getElementById('current-unit').value);
+  const dT      = parseFloat(document.getElementById('delta-t').value) || 10;
+
+  const err = document.getElementById('err-cond');
+  err.classList.remove('visible');
+
+  if ([wMils, tMils].some(x => !isFinite(x) || x <= 0)) {
+    err.classList.add('visible');
+    document.getElementById('res-cond').classList.remove('visible');
+    return;
+  }
+
+  // Cross-section in mil²
+  const A_mil2 = wMils * tMils;
+
+  // IPC-2221 current capacity
+  const Imax = layerK * Math.pow(dT, 0.44) * Math.pow(A_mil2, 0.725);
+
+  // Resistance (copper ρ = 1.724e-8 Ω·m)
+  const rho  = 1.724e-8;
+  const wM   = wMils * 25.4e-6;
+  const tM   = tMils * 25.4e-6;
+  const lenM = isFinite(lenMils) && lenMils > 0 ? lenMils * 25.4e-6 : null;
+  const A_m2 = wM * tM;
+  const R    = lenM !== null ? rho * lenM / A_m2 : null;
+
+  // Voltage drop & power (only if actual current given)
+  const hasI   = isFinite(iActual) && iActual > 0;
+  const Vdrop  = (R !== null && hasI) ? iActual * R : null;
+  const P      = (R !== null && hasI) ? iActual * iActual * R : null;
+
+  // Build results
+  let html = `
+    <div class="result-item"><div class="result-label">Cross-Section Area</div><div class="result-value">${parseFloat(A_mil2.toPrecision(4))} mil²<br><small style="color:var(--text-muted)">${parseFloat((A_m2*1e12).toPrecision(4))} µm²</small></div></div>
+    <div class="result-item"><div class="result-label">Max Current (ΔT=${dT}°C)</div><div class="result-value">${parseFloat(Imax.toPrecision(4))} A</div></div>
+  `;
+  if (R !== null) {
+    html += `<div class="result-item"><div class="result-label">Trace Resistance</div><div class="result-value">${fmtSI(R,'Ω')}</div></div>`;
+  }
+  if (Vdrop !== null) {
+    html += `<div class="result-item"><div class="result-label">Voltage Drop</div><div class="result-value">${fmtSI(Vdrop,'V')}</div></div>`;
+    html += `<div class="result-item"><div class="result-label">Power Dissipated</div><div class="result-value">${fmtSI(P,'W')}</div></div>`;
+  }
+  if (hasI && Imax > 0) {
+    const util = (iActual / Imax * 100).toFixed(1);
+    html += `<div class="result-item"><div class="result-label">Current Utilisation</div><div class="result-value">${util}%</div></div>`;
+  }
+
+  document.getElementById('grid-cond').innerHTML = html;
+  document.getElementById('res-cond').classList.add('visible');
+}
+</script>
+</body>
+</html>

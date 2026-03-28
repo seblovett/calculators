@@ -22,6 +22,19 @@ const NAV = [
       { href: 'parallel-resistor.html', title: 'Parallel Resistor' },
       { href: 'wheatstone-bridge.html', title: 'Wheatstone Bridge' },
       { href: 'battery-life.html',     title: 'Battery Life Estimator' },
+      { href: 'lc-resonance.html',     title: 'LC Resonant Frequency' },
+      { href: 'via-current.html',      title: 'Via Current' },
+      { href: 'pcb-conductor.html',    title: 'PCB Conductor Current' },
+      { href: 'planar-inductor.html',  title: 'Planar Inductor' },
+      { href: 'crosstalk.html',        title: 'Crosstalk' },
+    ],
+  },
+  {
+    label: '📡 RF & Signal',
+    items: [
+      { href: 'wavelength.html',       title: 'Wavelength' },
+      { href: 'er-effective.html',     title: 'Effective Permittivity (εr)' },
+      { href: 'ppm-calculator.html',   title: 'PPM Calculator' },
     ],
   },
   {

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PPM Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+  <main class="main">
+    <div class="page-title">📐 PPM Calculator</div>
+    <div class="page-subtitle">Convert between parts-per-million and actual frequency or component deviation.</div>
+
+    <div class="card">
+      <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
+        <button class="btn btn-primary"   id="tab-freq" onclick="showTab('freq')">Frequency (Oscillators)</button>
+        <button class="btn btn-secondary" id="tab-comp" onclick="showTab('comp')">Component Tolerance</button>
+      </div>
+
+      <!-- Tab 1: Frequency -->
+      <div id="mode-freq">
+        <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
+          <button class="btn btn-primary"   id="tab-f-ppm" onclick="showFreqTab('ppm')">PPM → Frequency</button>
+          <button class="btn btn-secondary" id="tab-f-dev" onclick="showFreqTab('dev')">Frequency → PPM</button>
+        </div>
+
+        <!-- Freq mode A: PPM to frequency -->
+        <div id="freq-mode-ppm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nominal Frequency (f₀)</label>
+              <div class="unit-input" data-type="frequency" data-default="1e6">
+                <input type="number" id="f-nominal">
+                <select id="f-nominal-unit"></select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>PPM Deviation</label>
+              <input type="number" id="f-ppm" placeholder="e.g. 25">
+            </div>
+          </div>
+
+          <div class="formula-block">Δf = f₀ × ppm / 10⁶</div>
+
+          <div class="results" id="freq-ppm-results">
+            <div class="result-grid">
+              <div class="result-item">
+                <div class="result-label">Frequency Deviation (Δf)</div>
+                <div class="result-value" id="freq-delta">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-label">Frequency Range</div>
+                <div class="result-value" id="freq-range">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="error" id="freq-ppm-error"></div>
+
+          <div class="actions">
+            <button class="btn btn-primary" onclick="calcFreqPPM()">Calculate</button>
+            <button class="btn btn-secondary" onclick="resetFreqPPM()">Reset</button>
+          </div>
+        </div>
+
+        <!-- Freq mode B: Frequency to PPM -->
+        <div id="freq-mode-dev" style="display:none">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nominal Frequency (f₀)</label>
+              <div class="unit-input" data-type="frequency" data-default="1e6">
+                <input type="number" id="f-nom2">
+                <select id="f-nom2-unit"></select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Actual Frequency (f)</label>
+              <div class="unit-input" data-type="frequency" data-default="1e6">
+                <input type="number" id="f-actual">
+                <select id="f-actual-unit"></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="formula-block">ppm = (f - f₀) / f₀ × 10⁶</div>
+
+          <div class="results" id="freq-dev-results">
+            <div class="result-grid">
+              <div class="result-item">
+                <div class="result-label">PPM Error</div>
+                <div class="result-value" id="freq-ppm-err">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-label">Frequency Error (Δf)</div>
+                <div class="result-value" id="freq-delta2">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="error" id="freq-dev-error"></div>
+
+          <div class="actions">
+            <button class="btn btn-primary" onclick="calcFreqDev()">Calculate</button>
+            <button class="btn btn-secondary" onclick="resetFreqDev()">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Component Tolerance -->
+      <div id="mode-comp" style="display:none">
+        <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
+          <button class="btn btn-primary"   id="tab-c-dev" onclick="showCompTab('dev')">Find Deviation</button>
+          <button class="btn btn-secondary" id="tab-c-tcr" onclick="showCompTab('tcr')">Find TCR</button>
+        </div>
+
+        <!-- Comp mode A: Find deviation -->
+        <div id="comp-mode-dev">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nominal Value (R₀)</label>
+              <div class="unit-input" data-type="resistance" data-default="1e3">
+                <input type="number" id="comp-r0">
+                <select id="comp-r0-unit"></select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Temperature Coefficient (ppm/°C)</label>
+              <input type="number" id="comp-tcr" placeholder="e.g. 100">
+            </div>
+            <div class="form-group">
+              <label>Temperature Change (°C)</label>
+              <input type="number" id="comp-dt" placeholder="e.g. 25">
+            </div>
+          </div>
+
+          <div class="formula-block">ΔR = R₀ × TCR × ΔT / 10⁶</div>
+
+          <div class="results" id="comp-dev-results">
+            <div class="result-grid">
+              <div class="result-item">
+                <div class="result-label">Change (ΔR)</div>
+                <div class="result-value" id="comp-delta">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-label">New Value</div>
+                <div class="result-value" id="comp-new">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-label">Percentage Change</div>
+                <div class="result-value" id="comp-pct">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="error" id="comp-dev-error"></div>
+
+          <div class="actions">
+            <button class="btn btn-primary" onclick="calcCompDev()">Calculate</button>
+            <button class="btn btn-secondary" onclick="resetCompDev()">Reset</button>
+          </div>
+        </div>
+
+        <!-- Comp mode B: Find TCR -->
+        <div id="comp-mode-tcr" style="display:none">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nominal Value (R₀)</label>
+              <div class="unit-input" data-type="resistance" data-default="1e3">
+                <input type="number" id="comp-r02">
+                <select id="comp-r02-unit"></select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Actual Value (R)</label>
+              <div class="unit-input" data-type="resistance" data-default="1e3">
+                <input type="number" id="comp-r">
+                <select id="comp-r-unit"></select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Temperature Change (°C)</label>
+              <input type="number" id="comp-dt2" placeholder="e.g. 25">
+            </div>
+          </div>
+
+          <div class="formula-block">TCR = (R - R₀) / (R₀ × ΔT) × 10⁶</div>
+
+          <div class="results" id="comp-tcr-results">
+            <div class="result-grid">
+              <div class="result-item">
+                <div class="result-label">TCR (ppm/°C)</div>
+                <div class="result-value" id="comp-tcr-val">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-label">Change (ΔR)</div>
+                <div class="result-value" id="comp-delta2">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-label">Percentage Change</div>
+                <div class="result-value" id="comp-pct2">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="error" id="comp-tcr-error"></div>
+
+          <div class="actions">
+            <button class="btn btn-primary" onclick="calcCompTCR()">Calculate</button>
+            <button class="btn btn-secondary" onclick="resetCompTCR()">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+function fmt(n, unit='') {
+  if (n === null || isNaN(n) || !isFinite(n)) return '—';
+  if (unit === 'Ω') {
+    if (n >= 1e6) return (n/1e6).toPrecision(4) + ' MΩ';
+    if (n >= 1e3) return (n/1e3).toPrecision(4) + ' kΩ';
+    return parseFloat(n.toPrecision(5)) + ' Ω';
+  }
+  if (unit === 'Hz') {
+    if (n >= 1e9) return parseFloat((n/1e9).toPrecision(4)) + ' GHz';
+    if (n >= 1e6) return parseFloat((n/1e6).toPrecision(4)) + ' MHz';
+    if (n >= 1e3) return parseFloat((n/1e3).toPrecision(4)) + ' kHz';
+    return parseFloat(n.toPrecision(5)) + ' Hz';
+  }
+  const abs = Math.abs(n);
+  if (abs >= 1e6 || (abs < 1e-4 && abs > 0)) return parseFloat(n.toExponential(3)) + (unit ? ' '+unit : '');
+  return parseFloat(n.toPrecision(5)) + (unit ? ' '+unit : '');
+}
+
+function showTab(t) {
+  ['freq','comp'].forEach(x => {
+    document.getElementById('mode-'+x).style.display = x===t?'':'none';
+    document.getElementById('tab-'+x).className = x===t?'btn btn-primary':'btn btn-secondary';
+  });
+}
+
+function showFreqTab(t) {
+  ['ppm','dev'].forEach(x => {
+    document.getElementById('freq-mode-'+x).style.display = x===t?'':'none';
+    document.getElementById('tab-f-'+x).className = x===t?'btn btn-primary':'btn btn-secondary';
+  });
+}
+
+function showCompTab(t) {
+  ['dev','tcr'].forEach(x => {
+    document.getElementById('comp-mode-'+x).style.display = x===t?'':'none';
+    document.getElementById('tab-c-'+x).className = x===t?'btn btn-primary':'btn btn-secondary';
+  });
+}
+
+function clearError(id) {
+  const err = document.getElementById(id);
+  if (err) {
+    err.textContent = '';
+    err.classList.remove('visible');
+  }
+}
+
+function setError(id, msg) {
+  const err = document.getElementById(id);
+  if (err) {
+    err.textContent = msg;
+    err.classList.add('visible');
+  }
+}
+
+// === FREQUENCY TAB ===
+
+function calcFreqPPM() {
+  clearError('freq-ppm-error');
+
+  const f0 = unitVal('f-nominal');
+  const ppm = parseFloat(document.getElementById('f-ppm').value);
+
+  if (!f0 || f0 <= 0) {
+    setError('freq-ppm-error', 'Nominal frequency must be positive');
+    return;
+  }
+  if (isNaN(ppm)) {
+    setError('freq-ppm-error', 'PPM deviation must be a valid number');
+    return;
+  }
+
+  const delta_f = f0 * ppm / 1e6;
+  const f_min = f0 - delta_f;
+  const f_max = f0 + delta_f;
+
+  document.getElementById('freq-delta').textContent = fmt(Math.abs(delta_f), 'Hz');
+  document.getElementById('freq-range').textContent = fmt(f_min, 'Hz') + ' to ' + fmt(f_max, 'Hz');
+
+  document.getElementById('freq-ppm-results').classList.add('visible');
+}
+
+function resetFreqPPM() {
+  setUnitVal('f-nominal', 1e6);
+  document.getElementById('f-ppm').value = '';
+  clearError('freq-ppm-error');
+  document.getElementById('freq-ppm-results').classList.remove('visible');
+}
+
+function calcFreqDev() {
+  clearError('freq-dev-error');
+
+  const f0 = unitVal('f-nom2');
+  const f = unitVal('f-actual');
+
+  if (!f0 || f0 <= 0) {
+    setError('freq-dev-error', 'Nominal frequency must be positive');
+    return;
+  }
+  if (!f || f <= 0) {
+    setError('freq-dev-error', 'Actual frequency must be positive');
+    return;
+  }
+
+  const ppm_err = (f - f0) / f0 * 1e6;
+  const delta_f = f - f0;
+
+  document.getElementById('freq-ppm-err').textContent = ppm_err.toPrecision(4) + ' ppm';
+  document.getElementById('freq-delta2').textContent = fmt(delta_f, 'Hz');
+
+  document.getElementById('freq-dev-results').classList.add('visible');
+}
+
+function resetFreqDev() {
+  setUnitVal('f-nom2', 1e6);
+  setUnitVal('f-actual', 1e6);
+  clearError('freq-dev-error');
+  document.getElementById('freq-dev-results').classList.remove('visible');
+}
+
+// === COMPONENT TAB ===
+
+function calcCompDev() {
+  clearError('comp-dev-error');
+
+  const r0 = unitVal('comp-r0');
+  const tcr = parseFloat(document.getElementById('comp-tcr').value);
+  const dt = parseFloat(document.getElementById('comp-dt').value);
+
+  if (!r0 || r0 <= 0) {
+    setError('comp-dev-error', 'Nominal value must be positive');
+    return;
+  }
+  if (isNaN(tcr)) {
+    setError('comp-dev-error', 'TCR must be a valid number');
+    return;
+  }
+  if (isNaN(dt)) {
+    setError('comp-dev-error', 'Temperature change must be a valid number');
+    return;
+  }
+
+  const delta_r = r0 * tcr * dt / 1e6;
+  const new_r = r0 + delta_r;
+  const pct = (delta_r / r0 * 100).toPrecision(4);
+
+  document.getElementById('comp-delta').textContent = fmt(delta_r, 'Ω');
+  document.getElementById('comp-new').textContent = fmt(new_r, 'Ω');
+  document.getElementById('comp-pct').textContent = pct + '%';
+
+  document.getElementById('comp-dev-results').classList.add('visible');
+}
+
+function resetCompDev() {
+  setUnitVal('comp-r0', 1e3);
+  document.getElementById('comp-tcr').value = '';
+  document.getElementById('comp-dt').value = '';
+  clearError('comp-dev-error');
+  document.getElementById('comp-dev-results').classList.remove('visible');
+}
+
+function calcCompTCR() {
+  clearError('comp-tcr-error');
+
+  const r0 = unitVal('comp-r02');
+  const r = unitVal('comp-r');
+  const dt = parseFloat(document.getElementById('comp-dt2').value);
+
+  if (!r0 || r0 <= 0) {
+    setError('comp-tcr-error', 'Nominal value must be positive');
+    return;
+  }
+  if (!r || r <= 0) {
+    setError('comp-tcr-error', 'Actual value must be positive');
+    return;
+  }
+  if (isNaN(dt) || dt === 0) {
+    setError('comp-tcr-error', 'Temperature change must be a non-zero number');
+    return;
+  }
+
+  const delta_r = r - r0;
+  const tcr_val = delta_r / (r0 * dt) * 1e6;
+  const pct = (delta_r / r0 * 100).toPrecision(4);
+
+  document.getElementById('comp-tcr-val').textContent = tcr_val.toPrecision(4) + ' ppm/°C';
+  document.getElementById('comp-delta2').textContent = fmt(delta_r, 'Ω');
+  document.getElementById('comp-pct2').textContent = pct + '%';
+
+  document.getElementById('comp-tcr-results').classList.add('visible');
+}
+
+function resetCompTCR() {
+  setUnitVal('comp-r02', 1e3);
+  setUnitVal('comp-r', 1e3);
+  document.getElementById('comp-dt2').value = '';
+  clearError('comp-tcr-error');
+  document.getElementById('comp-tcr-results').classList.remove('visible');
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+  resetFreqPPM();
+  resetFreqDev();
+  resetCompDev();
+  resetCompTCR();
+});
+</script>
+</body>
+</html>

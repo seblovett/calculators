@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planar Inductor Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .shape-toggle { display:flex; gap:.5rem; margin-bottom:1.25rem; }
+    .shape-btn {
+      flex:1; padding:.55rem; text-align:center; border-radius:var(--radius);
+      border:1px solid var(--border); background:var(--white); cursor:pointer;
+      font-size:.875rem; font-weight:600; transition:.12s;
+    }
+    .shape-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+    .schematic-wrap {
+      background:#f8fafc; border:1px solid var(--border);
+      border-radius:var(--radius); padding:1rem 1.5rem;
+      display:flex; align-items:center; justify-content:center;
+      margin-bottom:1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html" class="active">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+
+  <main class="main">
+    <div class="page-title">🌀 Planar Inductor Calculator</div>
+    <div class="page-subtitle">Estimate the inductance of a PCB spiral inductor using Mohan's modified Wheeler formula.</div>
+
+    <div class="card">
+      <h2>Coil Shape</h2>
+      <div class="shape-toggle">
+        <button class="shape-btn active" id="btn-square"  onclick="setShape('square')">Square</button>
+        <button class="shape-btn" id="btn-hex"    onclick="setShape('hex')">Hexagonal</button>
+        <button class="shape-btn" id="btn-oct"    onclick="setShape('oct')">Octagonal</button>
+        <button class="shape-btn" id="btn-circle" onclick="setShape('circle')">Circular</button>
+      </div>
+
+      <!-- Schematic -->
+      <div class="schematic-wrap">
+        <svg id="coil-svg" viewBox="0 0 220 220" width="200" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">
+          <!-- Spiral (decorative — square shape) -->
+          <!-- Outer turn -->
+          <rect x="20" y="20" width="180" height="180" fill="none" stroke="#f59e0b" stroke-width="5" rx="2"/>
+          <!-- Middle turn -->
+          <rect x="42" y="42" width="136" height="136" fill="none" stroke="#f59e0b" stroke-width="5" rx="2"/>
+          <!-- Inner turn -->
+          <rect x="64" y="64" width="92"  height="92"  fill="none" stroke="#f59e0b" stroke-width="5" rx="2"/>
+          <!-- Innermost turn -->
+          <rect x="86" y="86" width="48"  height="48"  fill="none" stroke="#f59e0b" stroke-width="5" rx="2"/>
+          <!-- d_out arrow -->
+          <line x1="20" y1="10" x2="200" y2="10" stroke="#2563eb" stroke-width="1.5" marker-end="url(#ao)" marker-start="url(#ao2)"/>
+          <text x="110" y="7" text-anchor="middle" font-size="11" fill="#2563eb" font-weight="600">d_out</text>
+          <!-- d_in arrow -->
+          <line x1="86" y1="213" x2="134" y2="213" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#ai)" marker-start="url(#ai2)"/>
+          <text x="110" y="220" text-anchor="middle" font-size="11" fill="#7c3aed" font-weight="600">d_in</text>
+          <defs>
+            <marker id="ao"  markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="#2563eb"/></marker>
+            <marker id="ao2" markerWidth="5" markerHeight="5" refX="0" refY="2.5" orient="auto"><path d="M5,0 L0,2.5 L5,5" fill="#2563eb"/></marker>
+            <marker id="ai"  markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="#7c3aed"/></marker>
+            <marker id="ai2" markerWidth="5" markerHeight="5" refX="0" refY="2.5" orient="auto"><path d="M5,0 L0,2.5 L5,5" fill="#7c3aed"/></marker>
+          </defs>
+        </svg>
+      </div>
+
+      <div class="formula-block">L = K₁μ₀N²d<sub>avg</sub> / (1 + K₂ρ)</div>
+      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">
+        Mohan modified Wheeler formula. ρ = (d<sub>out</sub> − d<sub>in</sub>) / (d<sub>out</sub> + d<sub>in</sub>), d<sub>avg</sub> = (d<sub>out</sub> + d<sub>in</sub>) / 2.
+        Shape coefficients: square K₁=2.34, K₂=2.75 · hexagonal K₁=2.33, K₂=3.82 · octagonal K₁=2.25, K₂=3.55 · circular K₁=2.46, K₂=2.04.
+      </p>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="n-turns">Number of Turns (N)</label>
+          <div class="unit-input" style="border:none;">
+            <input type="number" id="n-turns" placeholder="e.g. 4" step="1" min="1" oninput="calc()"
+                   style="border:1px solid var(--border);border-radius:var(--radius);padding:.5rem .75rem;width:100%;font-size:.95rem;">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="d-out">Outer Diameter (d<sub>out</sub>)</label>
+          <div class="unit-input">
+            <input type="number" id="d-out" placeholder="e.g. 5" step="any" min="0" oninput="calc()">
+            <select id="d-out-unit" onchange="calc()">
+              <option value="1e-3" selected>mm</option>
+              <option value="25.4e-3">in</option>
+              <option value="1e-6">µm</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="d-in">Inner Diameter (d<sub>in</sub>)</label>
+          <div class="unit-input">
+            <input type="number" id="d-in" placeholder="e.g. 2" step="any" min="0" oninput="calc()">
+            <select id="d-in-unit" onchange="calc()">
+              <option value="1e-3" selected>mm</option>
+              <option value="25.4e-3">in</option>
+              <option value="1e-6">µm</option>
+            </select>
+          </div>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-top:.25rem;">d_in = d_out − 2N(W + S)</p>
+        </div>
+        <div class="form-group">
+          <label for="trace-w">Trace Width (W)</label>
+          <div class="unit-input">
+            <input type="number" id="trace-w" placeholder="e.g. 0.2" step="any" min="0" oninput="calc()">
+            <select id="trace-w-unit" onchange="calc()">
+              <option value="1e-3" selected>mm</option>
+              <option value="25.4e-3">in</option>
+              <option value="1e-6">µm</option>
+            </select>
+          </div>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-top:.25rem;">Used to estimate DC resistance</p>
+        </div>
+        <div class="form-group">
+          <label for="cu-thick">Copper Thickness</label>
+          <div class="unit-input">
+            <input type="number" id="cu-thick" placeholder="e.g. 35" step="any" min="0" oninput="calc()">
+            <select id="cu-thick-unit" onchange="calc()">
+              <option value="1e-6" selected>µm</option>
+              <option value="1e-3">mm</option>
+              <option value="25.4e-6">mil</option>
+            </select>
+          </div>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-top:.25rem;">1 oz/ft² ≈ 35 µm</p>
+        </div>
+      </div>
+
+      <div class="error" id="err-ind">⚠ Please enter N, d_out, and d_in (d_in must be less than d_out).</div>
+
+      <div class="results" id="res-ind">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-ind"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Validity & Notes</h2>
+      <p style="font-size:.875rem;color:var(--text-muted);">
+        The Mohan modified Wheeler formula is accurate to within ~3% for fill ratios ρ between 0.1 and 0.9.
+        It assumes air core (no magnetic substrate). Self-resonant frequency, Q factor, and parasitics are not modelled here — use EM simulation for precision RF design.
+        DC resistance is calculated from copper resistivity ρ<sub>Cu</sub> = 1.724 × 10⁻⁸ Ω·m using the estimated mean turn length.
+      </p>
+    </div>
+  </main>
+</div>
+
+<script>
+const shapes = {
+  square:  { K1: 2.34, K2: 2.75 },
+  hex:     { K1: 2.33, K2: 3.82 },
+  oct:     { K1: 2.25, K2: 3.55 },
+  circle:  { K1: 2.46, K2: 2.04 },
+};
+let currentShape = 'square';
+
+function setShape(s) {
+  currentShape = s;
+  Object.keys(shapes).forEach(k => {
+    document.getElementById('btn-' + k).className = 'shape-btn' + (k === s ? ' active' : '');
+  });
+  calc();
+}
+
+function fmtSI(v, unit) {
+  if (!isFinite(v)) return '—';
+  const abs = Math.abs(v);
+  if (abs === 0) return '0 ' + unit;
+  if (abs >= 1)    return parseFloat(v.toPrecision(4)) + ' ' + unit;
+  if (abs >= 1e-3) return parseFloat((v*1e3).toPrecision(4)) + ' m' + unit;
+  if (abs >= 1e-6) return parseFloat((v*1e6).toPrecision(4)) + ' µ' + unit;
+  if (abs >= 1e-9) return parseFloat((v*1e9).toPrecision(4)) + ' n' + unit;
+  return v.toExponential(3) + ' ' + unit;
+}
+
+function calc() {
+  const N    = parseFloat(document.getElementById('n-turns').value);
+  const dout = parseFloat(document.getElementById('d-out').value)    * parseFloat(document.getElementById('d-out-unit').value);
+  const din  = parseFloat(document.getElementById('d-in').value)     * parseFloat(document.getElementById('d-in-unit').value);
+  const W    = parseFloat(document.getElementById('trace-w').value)  * parseFloat(document.getElementById('trace-w-unit').value);
+  const T    = parseFloat(document.getElementById('cu-thick').value) * parseFloat(document.getElementById('cu-thick-unit').value);
+
+  const err = document.getElementById('err-ind');
+  err.classList.remove('visible');
+
+  if (!isFinite(N) || N < 1 || !isFinite(dout) || !isFinite(din) || din >= dout || dout <= 0) {
+    err.classList.add('visible');
+    document.getElementById('res-ind').classList.remove('visible');
+    return;
+  }
+
+  const { K1, K2 } = shapes[currentShape];
+  const mu0  = 4e-7 * Math.PI;
+  const davg = (dout + din) / 2;
+  const rho  = (dout - din) / (dout + din);  // fill ratio
+
+  // Mohan modified Wheeler
+  const L = K1 * mu0 * N * N * davg / (1 + K2 * rho);
+
+  // DC resistance estimate (mean turn length × N)
+  let R_dc = null;
+  if (isFinite(W) && W > 0 && isFinite(T) && T > 0) {
+    const rho_cu  = 1.724e-8; // Ω·m
+    // Perimeter of mean turn (for each shape, approx)
+    const d_mean = davg;
+    let perim_per_turn;
+    if (currentShape === 'square')  perim_per_turn = 4 * d_mean;
+    else if (currentShape === 'hex') perim_per_turn = 6 * d_mean * Math.sin(Math.PI/6) * 2; // approx
+    else if (currentShape === 'oct') perim_per_turn = 8 * d_mean * Math.sin(Math.PI/8) * 2;
+    else perim_per_turn = Math.PI * d_mean; // circle
+    const total_length = perim_per_turn * N;
+    R_dc = rho_cu * total_length / (W * T);
+  }
+
+  // Self-resonant frequency (rough estimate via parasitic cap)
+  // Q and SRF not computed here — noted in the card
+
+  let html = `
+    <div class="result-item"><div class="result-label">Inductance (L)</div><div class="result-value">${fmtSI(L,'H')}</div></div>
+    <div class="result-item"><div class="result-label">Average Diameter (d<sub>avg</sub>)</div><div class="result-value">${parseFloat((davg*1e3).toPrecision(4))} mm</div></div>
+    <div class="result-item"><div class="result-label">Fill Ratio (ρ)</div><div class="result-value">${parseFloat(rho.toPrecision(3))}</div></div>
+    <div class="result-item"><div class="result-label">Shape Coefficients</div><div class="result-value">K₁=${K1}, K₂=${K2}</div></div>
+  `;
+  if (R_dc !== null) {
+    html += `<div class="result-item"><div class="result-label">DC Resistance (est.)</div><div class="result-value">${fmtSI(R_dc,'Ω')}</div></div>`;
+  }
+
+  document.getElementById('grid-ind').innerHTML = html;
+  document.getElementById('res-ind').classList.add('visible');
+}
+</script>
+</body>
+</html>

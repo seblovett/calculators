@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Effective Permittivity (εr eff) — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+  <main class="main">
+    <div class="page-title">⊡ Effective Permittivity (εr eff)</div>
+    <div class="page-subtitle">Calculate the effective dielectric constant and impedance of a microstrip or stripline.</div>
+
+    <div class="card">
+      <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
+        <button class="btn btn-primary"   id="tab-micro" onclick="showTab('micro')">Microstrip</button>
+        <button class="btn btn-secondary" id="tab-strip" onclick="showTab('strip')">Stripline</button>
+      </div>
+
+      <!-- Tab 1: Microstrip -->
+      <div id="mode-micro">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Substrate Permittivity (εr)</label>
+            <input type="number" id="micro-er" value="4.5" min="1" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Trace Width (W)</label>
+            <div class="unit-input" data-type="distance" data-default="1e-3">
+              <input type="number" id="micro-W">
+              <select id="micro-W-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Substrate Height (H)</label>
+            <div class="unit-input" data-type="distance" data-default="1e-3">
+              <input type="number" id="micro-H">
+              <select id="micro-H-unit"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="formula-block">εr_eff = (εr+1)/2 + (εr-1)/2 × 1/√(1 + 12/u)  where u = W/H</div>
+
+        <div class="results" id="micro-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">W/H Ratio</div>
+              <div class="result-value" id="micro-ratio">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Effective Permittivity (εr_eff)</div>
+              <div class="result-value" id="micro-eeff">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Characteristic Impedance (Z₀)</div>
+              <div class="result-value" id="micro-z0">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Phase Velocity</div>
+              <div class="result-value" id="micro-vp">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Wavelength @ 1 GHz</div>
+              <div class="result-value" id="micro-lambda">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="error" id="micro-error"></div>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calcMicrostrip()">Calculate</button>
+          <button class="btn btn-secondary" onclick="resetMicrostrip()">Reset</button>
+        </div>
+      </div>
+
+      <!-- Tab 2: Stripline -->
+      <div id="mode-strip" style="display:none">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Substrate Permittivity (εr)</label>
+            <input type="number" id="strip-er" value="4.5" min="1" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Trace Width (W)</label>
+            <div class="unit-input" data-type="distance" data-default="1e-3">
+              <input type="number" id="strip-W">
+              <select id="strip-W-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Board Thickness (B)</label>
+            <div class="unit-input" data-type="distance" data-default="1e-3">
+              <input type="number" id="strip-B">
+              <select id="strip-B-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Trace Thickness (T)</label>
+            <div class="unit-input" data-type="distance" data-default="35e-6">
+              <input type="number" id="strip-T">
+              <select id="strip-T-unit"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="formula-block">Z₀ = (60/√εr) × ln(4B / (0.67π × W_eff × (0.8 + T/W_eff)))</div>
+
+        <div class="results" id="strip-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">Effective Permittivity (εr_eff)</div>
+              <div class="result-value" id="strip-eeff">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Characteristic Impedance (Z₀)</div>
+              <div class="result-value" id="strip-z0">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Phase Velocity</div>
+              <div class="result-value" id="strip-vp">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Effective Trace Width (W_eff)</div>
+              <div class="result-value" id="strip-weff">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="error" id="strip-error"></div>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calcStripline()">Calculate</button>
+          <button class="btn btn-secondary" onclick="resetStripline()">Reset</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const c = 299792458; // m/s
+
+function fmt(n, unit='') {
+  if (n === null || isNaN(n) || !isFinite(n)) return '—';
+  if (unit === 'Ω') {
+    if (n >= 1e6) return (n/1e6).toPrecision(4) + ' MΩ';
+    if (n >= 1e3) return (n/1e3).toPrecision(4) + ' kΩ';
+    return parseFloat(n.toPrecision(5)) + ' Ω';
+  }
+  if (unit === 'm') {
+    if (n >= 1) return parseFloat(n.toPrecision(4)) + ' m';
+    if (n >= 1e-2) return parseFloat((n*100).toPrecision(4)) + ' cm';
+    if (n >= 1e-3) return parseFloat((n*1e3).toPrecision(4)) + ' mm';
+    if (n >= 1e-6) return parseFloat((n*1e6).toPrecision(4)) + ' µm';
+    return parseFloat((n*1e9).toPrecision(4)) + ' nm';
+  }
+  const abs = Math.abs(n);
+  if (abs >= 1e6 || (abs < 1e-4 && abs > 0)) return parseFloat(n.toExponential(3)) + (unit ? ' '+unit : '');
+  return parseFloat(n.toPrecision(5)) + (unit ? ' '+unit : '');
+}
+
+function showTab(t) {
+  ['micro','strip'].forEach(x => {
+    document.getElementById('mode-'+x).style.display = x===t?'':'none';
+    document.getElementById('tab-'+x).className = x===t?'btn btn-primary':'btn btn-secondary';
+  });
+}
+
+function clearError(prefix) {
+  const err = document.getElementById(prefix + '-error');
+  if (err) {
+    err.textContent = '';
+    err.classList.remove('visible');
+  }
+}
+
+function setError(prefix, msg) {
+  const err = document.getElementById(prefix + '-error');
+  if (err) {
+    err.textContent = msg;
+    err.classList.add('visible');
+  }
+}
+
+function calcMicrostrip() {
+  clearError('micro');
+
+  const er = parseFloat(document.getElementById('micro-er').value);
+  const W = unitVal('micro-W');
+  const H = unitVal('micro-H');
+
+  if (isNaN(er) || er < 1) {
+    setError('micro', 'Relative permittivity must be at least 1');
+    return;
+  }
+  if (!W || W <= 0) {
+    setError('micro', 'Trace width must be positive');
+    return;
+  }
+  if (!H || H <= 0) {
+    setError('micro', 'Substrate height must be positive');
+    return;
+  }
+
+  const u = W / H;
+  const eeff = (er + 1) / 2 + (er - 1) / 2 * 1 / Math.sqrt(1 + 12 / u);
+
+  // Characteristic impedance (narrow or wide formula)
+  let z0;
+  if (u <= 1) {
+    z0 = (60 / Math.sqrt(eeff)) * Math.log(8 / u + u / 4);
+  } else {
+    z0 = (120 * Math.PI / Math.sqrt(eeff)) / (u + 1.393 + 0.667 * Math.log(u + 1.444));
+  }
+
+  const vp = c / Math.sqrt(eeff);
+  const vp_percent = (vp / c * 100).toPrecision(4);
+  const lambda_1ghz = vp / 1e9;
+
+  document.getElementById('micro-ratio').textContent = u.toPrecision(4);
+  document.getElementById('micro-eeff').textContent = eeff.toPrecision(4);
+  document.getElementById('micro-z0').textContent = fmt(z0, 'Ω');
+  document.getElementById('micro-vp').textContent = vp_percent + '% of c';
+  document.getElementById('micro-lambda').textContent = fmt(lambda_1ghz, 'm');
+
+  document.getElementById('micro-results').classList.add('visible');
+}
+
+function resetMicrostrip() {
+  document.getElementById('micro-er').value = '4.5';
+  setUnitVal('micro-W', 1e-3);
+  setUnitVal('micro-H', 1e-3);
+  clearError('micro');
+  document.getElementById('micro-results').classList.remove('visible');
+}
+
+function calcStripline() {
+  clearError('strip');
+
+  const er = parseFloat(document.getElementById('strip-er').value);
+  const W = unitVal('strip-W');
+  const B = unitVal('strip-B');
+  const T = unitVal('strip-T');
+
+  if (isNaN(er) || er < 1) {
+    setError('strip', 'Relative permittivity must be at least 1');
+    return;
+  }
+  if (!W || W <= 0) {
+    setError('strip', 'Trace width must be positive');
+    return;
+  }
+  if (!B || B <= 0) {
+    setError('strip', 'Board thickness must be positive');
+    return;
+  }
+  if (!T || T < 0) {
+    setError('strip', 'Trace thickness must be non-negative');
+    return;
+  }
+
+  // For symmetric stripline, εr_eff = εr
+  const eeff = er;
+
+  // Effective width (Wadell)
+  const weff = W + (T / Math.PI) * (1 + Math.log(2 * B / T));
+
+  // Characteristic impedance
+  const z0 = (60 / Math.sqrt(er)) * Math.log(4 * B / (0.67 * Math.PI * weff * (0.8 + T / weff)));
+
+  const vp = c / Math.sqrt(er);
+  const vp_percent = (vp / c * 100).toPrecision(4);
+
+  document.getElementById('strip-eeff').textContent = eeff.toPrecision(4);
+  document.getElementById('strip-z0').textContent = fmt(z0, 'Ω');
+  document.getElementById('strip-vp').textContent = vp_percent + '% of c';
+  document.getElementById('strip-weff').textContent = fmt(weff, 'm');
+
+  document.getElementById('strip-results').classList.add('visible');
+}
+
+function resetStripline() {
+  document.getElementById('strip-er').value = '4.5';
+  setUnitVal('strip-W', 1e-3);
+  setUnitVal('strip-B', 1e-3);
+  setUnitVal('strip-T', 35e-6);
+  clearError('strip');
+  document.getElementById('strip-results').classList.remove('visible');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  resetMicrostrip();
+  resetStripline();
+});
+</script>
+</body>
+</html>

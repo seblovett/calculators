@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LC Resonant Frequency — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+  <main class="main">
+    <div class="page-title">〜 LC Resonant Frequency</div>
+    <div class="page-subtitle">Calculate resonant frequency, inductance, or capacitance for an LC circuit.</div>
+
+    <div class="card">
+      <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
+        <button class="btn btn-primary"   id="tab-freq" onclick="showTab('freq')">Find Frequency</button>
+        <button class="btn btn-secondary" id="tab-ind" onclick="showTab('ind')">Find Inductance</button>
+        <button class="btn btn-secondary" id="tab-cap" onclick="showTab('cap')">Find Capacitance</button>
+      </div>
+
+      <!-- Tab 1: Find Frequency -->
+      <div id="mode-freq">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Inductance (L)</label>
+            <div class="unit-input" data-type="inductance" data-default="1e-6">
+              <input type="number" id="freq-L">
+              <select id="freq-L-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Capacitance (C)</label>
+            <div class="unit-input" data-type="capacitance" data-default="1e-12">
+              <input type="number" id="freq-C">
+              <select id="freq-C-unit"></select>
+            </div>
+          </div>
+        </div>
+        <div class="formula-block">f = 1 / (2π√(LC))</div>
+        <div class="results" id="freq-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">Resonant Frequency</div>
+              <div class="result-value" id="freq-f">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Angular Frequency (ω₀)</div>
+              <div class="result-value" id="freq-omega">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Characteristic Impedance (Z₀)</div>
+              <div class="result-value" id="freq-z0">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="error" id="freq-error"></div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calcFreq()">Calculate</button>
+          <button class="btn btn-secondary" onclick="resetFreq()">Reset</button>
+        </div>
+      </div>
+
+      <!-- Tab 2: Find Inductance -->
+      <div id="mode-ind" style="display:none">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Frequency (f)</label>
+            <div class="unit-input" data-type="frequency" data-default="1e6">
+              <input type="number" id="ind-f">
+              <select id="ind-f-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Capacitance (C)</label>
+            <div class="unit-input" data-type="capacitance" data-default="1e-12">
+              <input type="number" id="ind-C">
+              <select id="ind-C-unit"></select>
+            </div>
+          </div>
+        </div>
+        <div class="formula-block">L = 1 / (4π²f²C)</div>
+        <div class="results" id="ind-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">Inductance</div>
+              <div class="result-value" id="ind-L">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Angular Frequency (ω₀)</div>
+              <div class="result-value" id="ind-omega">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Characteristic Impedance (Z₀)</div>
+              <div class="result-value" id="ind-z0">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="error" id="ind-error"></div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calcInd()">Calculate</button>
+          <button class="btn btn-secondary" onclick="resetInd()">Reset</button>
+        </div>
+      </div>
+
+      <!-- Tab 3: Find Capacitance -->
+      <div id="mode-cap" style="display:none">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Frequency (f)</label>
+            <div class="unit-input" data-type="frequency" data-default="1e6">
+              <input type="number" id="cap-f">
+              <select id="cap-f-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Inductance (L)</label>
+            <div class="unit-input" data-type="inductance" data-default="1e-6">
+              <input type="number" id="cap-L">
+              <select id="cap-L-unit"></select>
+            </div>
+          </div>
+        </div>
+        <div class="formula-block">C = 1 / (4π²f²L)</div>
+        <div class="results" id="cap-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">Capacitance</div>
+              <div class="result-value" id="cap-C">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Angular Frequency (ω₀)</div>
+              <div class="result-value" id="cap-omega">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Characteristic Impedance (Z₀)</div>
+              <div class="result-value" id="cap-z0">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="error" id="cap-error"></div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calcCap()">Calculate</button>
+          <button class="btn btn-secondary" onclick="resetCap()">Reset</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+function fmt(n, unit='') {
+  if (n === null || isNaN(n) || !isFinite(n)) return '—';
+  if (unit === 'Ω') {
+    if (n >= 1e6) return (n/1e6).toPrecision(4) + ' MΩ';
+    if (n >= 1e3) return (n/1e3).toPrecision(4) + ' kΩ';
+    return parseFloat(n.toPrecision(5)) + ' Ω';
+  }
+  if (unit === 'H') {
+    if (n >= 1) return parseFloat(n.toPrecision(4)) + ' H';
+    if (n >= 1e-3) return parseFloat((n*1e3).toPrecision(4)) + ' mH';
+    if (n >= 1e-6) return parseFloat((n*1e6).toPrecision(4)) + ' µH';
+    return parseFloat((n*1e9).toPrecision(4)) + ' nH';
+  }
+  if (unit === 'F') {
+    if (n >= 1) return parseFloat(n.toPrecision(4)) + ' F';
+    if (n >= 1e-3) return parseFloat((n*1e3).toPrecision(4)) + ' mF';
+    if (n >= 1e-6) return parseFloat((n*1e6).toPrecision(4)) + ' µF';
+    if (n >= 1e-9) return parseFloat((n*1e9).toPrecision(4)) + ' nF';
+    return parseFloat((n*1e12).toPrecision(4)) + ' pF';
+  }
+  if (unit === 'Hz') {
+    if (n >= 1e9) return parseFloat((n/1e9).toPrecision(4)) + ' GHz';
+    if (n >= 1e6) return parseFloat((n/1e6).toPrecision(4)) + ' MHz';
+    if (n >= 1e3) return parseFloat((n/1e3).toPrecision(4)) + ' kHz';
+    return parseFloat(n.toPrecision(5)) + ' Hz';
+  }
+  const abs = Math.abs(n);
+  if (abs >= 1e6 || (abs < 1e-4 && abs > 0)) return parseFloat(n.toExponential(3)) + (unit ? ' '+unit : '');
+  return parseFloat(n.toPrecision(5)) + (unit ? ' '+unit : '');
+}
+
+function showTab(t) {
+  ['freq','ind','cap'].forEach(x => {
+    document.getElementById('mode-'+x).style.display = x===t?'':'none';
+    document.getElementById('tab-'+x).className = x===t?'btn btn-primary':'btn btn-secondary';
+  });
+}
+
+function clearError(prefix) {
+  const err = document.getElementById(prefix + '-error');
+  if (err) {
+    err.textContent = '';
+    err.classList.remove('visible');
+  }
+}
+
+function setError(prefix, msg) {
+  const err = document.getElementById(prefix + '-error');
+  if (err) {
+    err.textContent = msg;
+    err.classList.add('visible');
+  }
+}
+
+function calcFreq() {
+  clearError('freq');
+  const L = unitVal('freq-L');
+  const C = unitVal('freq-C');
+
+  if (!L || L <= 0 || !C || C <= 0) {
+    setError('freq', 'Both L and C must be positive');
+    return;
+  }
+
+  const f = 1 / (2 * Math.PI * Math.sqrt(L * C));
+  const omega = 2 * Math.PI * f;
+  const z0 = Math.sqrt(L / C);
+
+  document.getElementById('freq-f').textContent = fmt(f, 'Hz');
+  document.getElementById('freq-omega').textContent = fmt(omega, '') + ' rad/s';
+  document.getElementById('freq-z0').textContent = fmt(z0, 'Ω');
+  document.getElementById('freq-results').classList.add('visible');
+}
+
+function resetFreq() {
+  setUnitVal('freq-L', 1e-6);
+  setUnitVal('freq-C', 1e-12);
+  clearError('freq');
+  document.getElementById('freq-results').classList.remove('visible');
+}
+
+function calcInd() {
+  clearError('ind');
+  const f = unitVal('ind-f');
+  const C = unitVal('ind-C');
+
+  if (!f || f <= 0 || !C || C <= 0) {
+    setError('ind', 'Both f and C must be positive');
+    return;
+  }
+
+  const L = 1 / (4 * Math.PI * Math.PI * f * f * C);
+  const omega = 2 * Math.PI * f;
+  const z0 = Math.sqrt(L / C);
+
+  setUnitVal('ind-L', L);
+  document.getElementById('ind-L').textContent = fmt(L, 'H');
+  document.getElementById('ind-omega').textContent = fmt(omega, '') + ' rad/s';
+  document.getElementById('ind-z0').textContent = fmt(z0, 'Ω');
+  document.getElementById('ind-results').classList.add('visible');
+}
+
+function resetInd() {
+  setUnitVal('ind-f', 1e6);
+  setUnitVal('ind-C', 1e-12);
+  clearError('ind');
+  document.getElementById('ind-results').classList.remove('visible');
+}
+
+function calcCap() {
+  clearError('cap');
+  const f = unitVal('cap-f');
+  const L = unitVal('cap-L');
+
+  if (!f || f <= 0 || !L || L <= 0) {
+    setError('cap', 'Both f and L must be positive');
+    return;
+  }
+
+  const C = 1 / (4 * Math.PI * Math.PI * f * f * L);
+  const omega = 2 * Math.PI * f;
+  const z0 = Math.sqrt(L / C);
+
+  setUnitVal('cap-C', C);
+  document.getElementById('cap-C').textContent = fmt(C, 'F');
+  document.getElementById('cap-omega').textContent = fmt(omega, '') + ' rad/s';
+  document.getElementById('cap-z0').textContent = fmt(z0, 'Ω');
+  document.getElementById('cap-results').classList.add('visible');
+}
+
+function resetCap() {
+  setUnitVal('cap-f', 1e6);
+  setUnitVal('cap-L', 1e-6);
+  clearError('cap');
+  document.getElementById('cap-results').classList.remove('visible');
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+  resetFreq();
+  resetInd();
+  resetCap();
+});
+</script>
+</body>
+</html>

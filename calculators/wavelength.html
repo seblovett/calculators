@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wavelength Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+  <main class="main">
+    <div class="page-title">〜 Wavelength Calculator</div>
+    <div class="page-subtitle">Calculate wavelength and electrical length for a given frequency and medium.</div>
+
+    <div class="card">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Frequency</label>
+          <div class="unit-input" data-type="frequency" data-default="1e9">
+            <input type="number" id="freq">
+            <select id="freq-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Relative Permittivity (εr)</label>
+          <input type="number" id="er" value="4.5" min="1" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Relative Permeability (µr)</label>
+          <input type="number" id="ur" value="1" min="1" step="0.1">
+        </div>
+      </div>
+
+      <div class="formula-block">λ = c / (f × √(εr × µr))</div>
+
+      <div class="results" id="results">
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-label">Free-space Wavelength (λ₀)</div>
+            <div class="result-value" id="lambda0">—</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Wavelength in Medium (λ)</div>
+            <div class="result-value" id="lambda">—</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Quarter Wavelength (λ/4)</div>
+            <div class="result-value" id="lambda-q">—</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Half Wavelength (λ/2)</div>
+            <div class="result-value" id="lambda-h">—</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Phase Velocity</div>
+            <div class="result-value" id="vp">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="error" id="error"></div>
+
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calculate()">Calculate</button>
+        <button class="btn btn-secondary" onclick="reset()">Reset</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const c = 299792458; // m/s
+
+function fmt(n, unit='') {
+  if (n === null || isNaN(n) || !isFinite(n)) return '—';
+  if (unit === 'm') {
+    if (n >= 1) return parseFloat(n.toPrecision(4)) + ' m';
+    if (n >= 1e-2) return parseFloat((n*100).toPrecision(4)) + ' cm';
+    if (n >= 1e-3) return parseFloat((n*1e3).toPrecision(4)) + ' mm';
+    if (n >= 1e-6) return parseFloat((n*1e6).toPrecision(4)) + ' µm';
+    return parseFloat((n*1e9).toPrecision(4)) + ' nm';
+  }
+  if (unit === 'Hz') {
+    if (n >= 1e9) return parseFloat((n/1e9).toPrecision(4)) + ' GHz';
+    if (n >= 1e6) return parseFloat((n/1e6).toPrecision(4)) + ' MHz';
+    if (n >= 1e3) return parseFloat((n/1e3).toPrecision(4)) + ' kHz';
+    return parseFloat(n.toPrecision(5)) + ' Hz';
+  }
+  const abs = Math.abs(n);
+  if (abs >= 1e6 || (abs < 1e-4 && abs > 0)) return parseFloat(n.toExponential(3)) + (unit ? ' '+unit : '');
+  return parseFloat(n.toPrecision(5)) + (unit ? ' '+unit : '');
+}
+
+function clearError() {
+  const err = document.getElementById('error');
+  err.textContent = '';
+  err.classList.remove('visible');
+}
+
+function setError(msg) {
+  const err = document.getElementById('error');
+  err.textContent = msg;
+  err.classList.add('visible');
+}
+
+function calculate() {
+  clearError();
+
+  const freq = unitVal('freq');
+  const er = parseFloat(document.getElementById('er').value);
+  const ur = parseFloat(document.getElementById('ur').value);
+
+  if (!freq || freq <= 0) {
+    setError('Frequency must be positive');
+    return;
+  }
+  if (isNaN(er) || er < 1) {
+    setError('Relative permittivity must be at least 1');
+    return;
+  }
+  if (isNaN(ur) || ur < 1) {
+    setError('Relative permeability must be at least 1');
+    return;
+  }
+
+  // Free-space wavelength
+  const lambda0 = c / freq;
+
+  // Phase velocity
+  const vp = c / Math.sqrt(er * ur);
+
+  // Wavelength in medium
+  const lambda = lambda0 / Math.sqrt(er * ur);
+
+  // Fractional wavelengths
+  const lambda_q = lambda / 4;
+  const lambda_h = lambda / 2;
+
+  // Phase velocity as % of c
+  const vp_percent = (vp / c * 100).toPrecision(4);
+
+  document.getElementById('lambda0').textContent = fmt(lambda0, 'm');
+  document.getElementById('lambda').textContent = fmt(lambda, 'm');
+  document.getElementById('lambda-q').textContent = fmt(lambda_q, 'm');
+  document.getElementById('lambda-h').textContent = fmt(lambda_h, 'm');
+  document.getElementById('vp').textContent = vp_percent + '% of c';
+
+  document.getElementById('results').classList.add('visible');
+}
+
+function reset() {
+  setUnitVal('freq', 1e9);
+  document.getElementById('er').value = '4.5';
+  document.getElementById('ur').value = '1';
+  clearError();
+  document.getElementById('results').classList.remove('visible');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  reset();
+});
+</script>
+</body>
+</html>

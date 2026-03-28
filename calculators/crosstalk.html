@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crosstalk Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .mode-toggle { display:flex; gap:.5rem; margin-bottom:1.25rem; }
+    .mode-btn {
+      flex:1; padding:.55rem; text-align:center; border-radius:var(--radius);
+      border:1px solid var(--border); background:var(--white); cursor:pointer;
+      font-size:.875rem; font-weight:600; transition:.12s;
+    }
+    .mode-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+    .schematic-wrap {
+      background:#f8fafc; border:1px solid var(--border);
+      border-radius:var(--radius); padding:1rem 1.5rem;
+      display:flex; align-items:center; justify-content:center;
+      margin-bottom:1.25rem;
+    }
+    .xt-highlight { background:#fef3c7; border:1px solid #f59e0b; border-radius:4px; padding:.5rem .75rem; font-size:.85rem; margin-bottom:1rem; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html" class="active">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+
+  <main class="main">
+    <div class="page-title">⚡ Crosstalk Calculator</div>
+    <div class="page-subtitle">Estimate inductive and capacitive crosstalk between parallel PCB traces (microstrip).</div>
+
+    <div class="card">
+      <h2>Topology</h2>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btn-ms"  onclick="setMode('microstrip')">Microstrip</button>
+        <button class="mode-btn"        id="btn-sl"  onclick="setMode('stripline')">Stripline</button>
+      </div>
+      <div class="xt-highlight" id="topo-note">
+        Microstrip: traces on the outer PCB layer above a ground plane.
+      </div>
+
+      <!-- Schematic -->
+      <div class="schematic-wrap">
+        <svg viewBox="0 0 300 150" width="280" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">
+          <!-- Ground plane -->
+          <rect x="10" y="100" width="280" height="18" fill="#94a3b8" stroke="#475569" stroke-width="1.2"/>
+          <text x="150" y="113" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="600">GND</text>
+          <!-- Trace 1 (aggressor) -->
+          <rect x="60"  y="72" width="80" height="14" fill="#f59e0b" stroke="#92400e" stroke-width="1.5" rx="2"/>
+          <text x="100" y="63" text-anchor="middle" font-size="11" fill="#92400e" font-weight="700">Aggressor</text>
+          <!-- Trace 2 (victim) -->
+          <rect x="160" y="72" width="80" height="14" fill="#3b82f6" stroke="#1e40af" stroke-width="1.5" rx="2"/>
+          <text x="200" y="63" text-anchor="middle" font-size="11" fill="#1e40af" font-weight="700">Victim</text>
+          <!-- Height arrow -->
+          <line x1="22" y1="72" x2="22" y2="100" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#mh)" marker-start="url(#mh2)"/>
+          <text x="12" y="89" font-size="10" fill="#7c3aed" font-weight="600" transform="rotate(-90,12,89)">H</text>
+          <!-- Spacing arrow -->
+          <line x1="140" y1="55" x2="160" y2="55" stroke="#059669" stroke-width="1.5" marker-end="url(#ms)" marker-start="url(#ms2)"/>
+          <text x="150" y="50" text-anchor="middle" font-size="10" fill="#059669" font-weight="600">S</text>
+          <defs>
+            <marker id="mh"  markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="#7c3aed"/></marker>
+            <marker id="mh2" markerWidth="5" markerHeight="5" refX="0" refY="2.5" orient="auto"><path d="M5,0 L0,2.5 L5,5" fill="#7c3aed"/></marker>
+            <marker id="ms"  markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="#059669"/></marker>
+            <marker id="ms2" markerWidth="5" markerHeight="5" refX="0" refY="2.5" orient="auto"><path d="M5,0 L0,2.5 L5,5" fill="#059669"/></marker>
+          </defs>
+        </svg>
+      </div>
+
+      <div class="formula-block">
+        K<sub>B</sub> = ¼(C<sub>m</sub>/C₀ + L<sub>m</sub>/L₀) &nbsp;|&nbsp;
+        K<sub>F</sub> = ½(C<sub>m</sub>/C₀ − L<sub>m</sub>/L₀)
+      </div>
+      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">
+        Backward (near-end) and forward (far-end) crosstalk coefficients. Mutual C and L are estimated from Hammerstad–Jensen closed-form expressions. Results are approximate — use EM simulation for precision work.
+      </p>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="trace-w2">Trace Width (W)</label>
+          <div class="unit-input">
+            <input type="number" id="trace-w2" placeholder="e.g. 0.15" step="any" min="0" oninput="calc()">
+            <select id="trace-w2-unit" onchange="calc()">
+              <option value="1e-3" selected>mm</option>
+              <option value="25.4e-3">in</option>
+              <option value="1e-6">µm</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="spacing">Edge-to-Edge Spacing (S)</label>
+          <div class="unit-input">
+            <input type="number" id="spacing" placeholder="e.g. 0.15" step="any" min="0" oninput="calc()">
+            <select id="spacing-unit" onchange="calc()">
+              <option value="1e-3" selected>mm</option>
+              <option value="25.4e-3">in</option>
+              <option value="1e-6">µm</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="height">Dielectric Height (H)</label>
+          <div class="unit-input">
+            <input type="number" id="height" placeholder="e.g. 0.1" step="any" min="0" oninput="calc()">
+            <select id="height-unit" onchange="calc()">
+              <option value="1e-3" selected>mm</option>
+              <option value="25.4e-3">in</option>
+              <option value="1e-6">µm</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="er">Relative Permittivity (ε<sub>r</sub>)</label>
+          <div class="unit-input" style="border:none;">
+            <input type="number" id="er" placeholder="e.g. 4.3" value="4.3" step="any" min="1" oninput="calc()"
+                   style="border:1px solid var(--border);border-radius:var(--radius);padding:.5rem .75rem;width:100%;font-size:.95rem;">
+          </div>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-top:.25rem;">FR4 ≈ 4.3 at 1 GHz</p>
+        </div>
+        <div class="form-group">
+          <label for="coup-len">Coupled Length (L)</label>
+          <div class="unit-input">
+            <input type="number" id="coup-len" placeholder="e.g. 20" step="any" min="0" oninput="calc()">
+            <select id="coup-len-unit" onchange="calc()">
+              <option value="1e-3" selected>mm</option>
+              <option value="25.4e-3">in</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="rise-time">Signal Rise Time (t<sub>r</sub>)</label>
+          <div class="unit-input">
+            <input type="number" id="rise-time" placeholder="e.g. 1" step="any" min="0" oninput="calc()">
+            <select id="rise-time-unit" onchange="calc()">
+              <option value="1e-9" selected>ns</option>
+              <option value="1e-12">ps</option>
+              <option value="1e-6">µs</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="impedance">Line Impedance (Z₀)</label>
+          <div class="unit-input" style="border:none;">
+            <input type="number" id="impedance" placeholder="e.g. 50" value="50" step="any" min="1" oninput="calc()"
+                   style="border:1px solid var(--border);border-radius:var(--radius);padding:.5rem .75rem;width:100%;font-size:.95rem;">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="swing">Signal Swing (V)</label>
+          <div class="unit-input" style="border:none;">
+            <input type="number" id="swing" placeholder="e.g. 3.3" value="3.3" step="any" min="0" oninput="calc()"
+                   style="border:1px solid var(--border);border-radius:var(--radius);padding:.5rem .75rem;width:100%;font-size:.95rem;">
+          </div>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-top:.25rem;">Peak-to-peak voltage of aggressor signal</p>
+        </div>
+      </div>
+
+      <div class="error" id="err-xt">⚠ Please enter trace width, spacing, and dielectric height.</div>
+
+      <div class="results" id="res-xt">
+        <h3>Results</h3>
+        <div class="result-grid" id="grid-xt"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3W Rule Check</h2>
+      <div id="rule-3w" style="font-size:.875rem;color:var(--text-muted);">
+        Enter trace width and spacing to see the 3W rule check.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>About Crosstalk</h2>
+      <p style="font-size:.875rem;color:var(--text-muted);">
+        <strong>Backward (near-end) crosstalk K<sub>B</sub></strong> appears at the source end of the victim trace and grows with coupled length until the line delay exceeds half the rise time, after which it saturates. <strong>Forward (far-end) crosstalk K<sub>F</sub></strong> appears at the far end of the victim and increases proportionally with coupled length.
+      </p>
+      <p style="font-size:.875rem;color:var(--text-muted);margin-top:.5rem;">
+        In a stripline (symmetric), forward crosstalk is near-zero because the inductive and capacitive components cancel. In microstrip they do not cancel, leading to non-zero forward crosstalk.
+        The <strong>3W rule</strong> (centre-to-centre spacing ≥ 3× trace width) reduces EMI radiation and coupling to below −10 dB.
+      </p>
+    </div>
+  </main>
+</div>
+
+<script>
+let currentMode = 'microstrip';
+
+function setMode(m) {
+  currentMode = m;
+  document.getElementById('btn-ms').className = 'mode-btn' + (m === 'microstrip' ? ' active' : '');
+  document.getElementById('btn-sl').className = 'mode-btn' + (m === 'stripline'  ? ' active' : '');
+  document.getElementById('topo-note').textContent = m === 'microstrip'
+    ? 'Microstrip: traces on the outer PCB layer above a ground plane.'
+    : 'Stripline: traces buried between two ground planes. Forward crosstalk is near-zero (C_m/C₀ ≈ L_m/L₀).';
+  calc();
+}
+
+function fmtPct(v) { return isFinite(v) ? parseFloat((v*100).toPrecision(3)) + ' %' : '—'; }
+function fmtdB(v)  { return isFinite(v) && v > 0 ? parseFloat((20*Math.log10(v)).toPrecision(3)) + ' dB' : '—'; }
+function fmtV(v)   {
+  if (!isFinite(v)) return '—';
+  if (Math.abs(v) >= 1)    return parseFloat(v.toPrecision(3)) + ' V';
+  if (Math.abs(v) >= 1e-3) return parseFloat((v*1e3).toPrecision(3)) + ' mV';
+  return parseFloat((v*1e6).toPrecision(3)) + ' µV';
+}
+
+function calc() {
+  const W  = parseFloat(document.getElementById('trace-w2').value)   * parseFloat(document.getElementById('trace-w2-unit').value);
+  const S  = parseFloat(document.getElementById('spacing').value)     * parseFloat(document.getElementById('spacing-unit').value);
+  const H  = parseFloat(document.getElementById('height').value)      * parseFloat(document.getElementById('height-unit').value);
+  const er = parseFloat(document.getElementById('er').value) || 4.3;
+  const Lcoup = parseFloat(document.getElementById('coup-len').value) * parseFloat(document.getElementById('coup-len-unit').value);
+  const tr    = parseFloat(document.getElementById('rise-time').value) * parseFloat(document.getElementById('rise-time-unit').value);
+  const Z0    = parseFloat(document.getElementById('impedance').value) || 50;
+  const Vsw   = parseFloat(document.getElementById('swing').value) || 3.3;
+
+  const err = document.getElementById('err-xt');
+  err.classList.remove('visible');
+
+  if ([W, S, H].some(x => !isFinite(x) || x <= 0)) {
+    err.classList.add('visible');
+    document.getElementById('res-xt').classList.remove('visible');
+    document.getElementById('rule-3w').textContent = 'Enter trace width and spacing to see the 3W rule check.';
+    return;
+  }
+
+  // ---- 3W Rule ----
+  const centre_sep = W + S; // edge-to-edge + width gives centre-to-centre
+  const rule3w     = centre_sep >= 3 * W;
+  document.getElementById('rule-3w').innerHTML =
+    `Centre-to-centre spacing: <strong>${parseFloat((centre_sep*1e3).toPrecision(3))} mm</strong>.
+     3W threshold (3 × ${parseFloat((W*1e3).toPrecision(3))} mm): <strong>${parseFloat((3*W*1e3).toPrecision(3))} mm</strong>.
+     <span style="color:${rule3w ? '#16a34a' : '#dc2626'};font-weight:700">${rule3w ? '✓ Passes 3W rule' : '✗ Fails 3W rule — increase spacing'}</span>`;
+
+  // ---- Approximate mutual C and L for microstrip ----
+  // Using a simplified closed-form based on Wadell / IPC-2141 approach
+  // Effective permittivity for isolated microstrip
+  const u  = W / H;
+  const er_eff = (er + 1) / 2 + (er - 1) / 2 * (1 / Math.sqrt(1 + 12 / u));
+  const c0 = 3e8; // m/s
+
+  // Phase velocity
+  const vp = c0 / Math.sqrt(er_eff);
+
+  // C0 and L0 from impedance and velocity
+  const C0 = 1 / (Z0 * vp);   // F/m
+  const L0 = Z0 / vp;         // H/m
+
+  // Mutual capacitance (per unit length) — empirical exponential decay
+  // Cm/C0 ≈ exp(-π·S/H) / (1 + W/H)  (rough approximation)
+  const D = W + S; // centre-to-centre separation
+  const Cm_ratio = Math.exp(-Math.PI * D / H) / (1 + W / H);
+
+  // Mutual inductance ratio
+  let Lm_ratio;
+  if (currentMode === 'microstrip') {
+    Lm_ratio = Cm_ratio;  // rough approximation: Lm/L0 ≈ Cm/C0 for microstrip
+  } else {
+    // Stripline: Lm/L0 ≈ Cm/C0 (cancel in forward XT)
+    Lm_ratio = Cm_ratio;
+  }
+
+  // Crosstalk coefficients
+  const KB = 0.25 * (Cm_ratio + Lm_ratio);
+  let   KF = 0.5  * (Cm_ratio - Lm_ratio);
+  if (currentMode === 'stripline') KF = 0; // ideal stripline
+
+  // Peak backward crosstalk voltage
+  // V_NEXT = KB × Vsw × (1 - exp(-2*T_d/tr)) for lumped model
+  // T_d = Lcoup / vp (one-way delay)
+  let V_NEXT = null, V_FEXT = null;
+  const hasLen = isFinite(Lcoup) && Lcoup > 0;
+  const hasTr  = isFinite(tr) && tr > 0;
+
+  if (hasLen) {
+    const Td = Lcoup / vp;  // one-way propagation delay
+
+    if (hasTr) {
+      // Backward (saturated if Td > tr/2)
+      const sat = 2 * Td >= tr;
+      V_NEXT = sat ? KB * Vsw : KB * Vsw * (2 * Td / tr);
+      // Forward
+      V_FEXT = currentMode === 'stripline' ? 0 : Math.abs(KF) * Vsw * (Lcoup / (vp * tr));
+    }
+  }
+
+  let html = `
+    <div class="result-item"><div class="result-label">C<sub>m</sub>/C₀ (mutual C ratio)</div><div class="result-value">${parseFloat(Cm_ratio.toPrecision(3))}</div></div>
+    <div class="result-item"><div class="result-label">L<sub>m</sub>/L₀ (mutual L ratio)</div><div class="result-value">${parseFloat(Lm_ratio.toPrecision(3))}</div></div>
+    <div class="result-item"><div class="result-label">Backward XT coefficient (K<sub>B</sub>)</div><div class="result-value">${parseFloat(KB.toPrecision(3))} &nbsp; (${fmtdB(KB)})</div></div>
+    <div class="result-item"><div class="result-label">Forward XT coefficient (K<sub>F</sub>)</div><div class="result-value">${parseFloat(KF.toPrecision(3))} &nbsp; (${currentMode==='stripline'?'≈ 0 (stripline)':fmtdB(Math.abs(KF))})</div></div>
+    <div class="result-item"><div class="result-label">Effective ε<sub>r</sub></div><div class="result-value">${parseFloat(er_eff.toPrecision(4))}</div></div>
+    <div class="result-item"><div class="result-label">Phase Velocity</div><div class="result-value">${parseFloat((vp/c0*100).toPrecision(3))}% of c</div></div>
+  `;
+  if (hasLen && hasTr && V_NEXT !== null) {
+    const Td_ns = (Lcoup / vp) * 1e9;
+    html += `
+      <div class="result-item"><div class="result-label">One-way Delay (T<sub>d</sub>)</div><div class="result-value">${parseFloat(Td_ns.toPrecision(3))} ns</div></div>
+      <div class="result-item"><div class="result-label">Peak NEXT (backward XT)</div><div class="result-value">${fmtV(V_NEXT)}</div></div>
+      <div class="result-item"><div class="result-label">Peak FEXT (forward XT)</div><div class="result-value">${currentMode==='stripline'?'≈ 0':fmtV(V_FEXT)}</div></div>
+    `;
+  }
+
+  document.getElementById('grid-xt').innerHTML = html;
+  document.getElementById('res-xt').classList.add('visible');
+}
+</script>
+</body>
+</html>
