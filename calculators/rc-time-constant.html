@@ -6,9 +6,36 @@
   <title>RC Time Constant Calculator — Engineering Tools</title>
   <link rel="stylesheet" href="../css/style.css">
   <style>
-    .tau-table td:first-child { font-weight: 600; color: var(--blue); }
-    .progress-bar-wrap { background: #e2e8f0; border-radius: 999px; height: 8px; margin-top: 4px; }
-    .progress-bar { background: var(--blue); border-radius: 999px; height: 8px; transition: width .3s; }
+    #rc-graph-wrap {
+      position: relative;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .5rem;
+      margin-bottom: 1rem;
+      user-select: none;
+    }
+    #rc-canvas { display: block; width: 100%; cursor: crosshair; }
+    #rc-tooltip {
+      position: absolute;
+      background: rgba(15,23,42,.88);
+      color: #fff;
+      font-size: .78rem;
+      padding: .35rem .6rem;
+      border-radius: 6px;
+      pointer-events: none;
+      display: none;
+      white-space: nowrap;
+      line-height: 1.6;
+    }
+    .graph-legend {
+      display: flex; gap: 1.25rem; flex-wrap: wrap;
+      font-size: .82rem; margin-bottom: .75rem;
+    }
+    .legend-dot {
+      display: inline-block; width: 12px; height: 3px;
+      border-radius: 2px; vertical-align: middle; margin-right: 5px;
+    }
   </style>
 </head>
 <body>
@@ -64,17 +91,17 @@
       </div>
     </div>
 
-    <!-- Charge/Discharge table -->
+    <!-- Charge/Discharge interactive graph -->
     <div class="card" id="charge-card" style="display:none;">
-      <h2>Charge / Discharge Voltage Table</h2>
+      <h2>Charge / Discharge Graph</h2>
       <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:.85rem;">
         Charging: V(t) = V<sub>s</sub> × (1 − e<sup>−t/τ</sup>) &nbsp;|&nbsp;
         Discharging: V(t) = V<sub>0</sub> × e<sup>−t/τ</sup>
       </p>
 
-      <div class="form-grid" style="margin-bottom:1rem;">
+      <div class="form-grid" style="margin-bottom:.75rem;">
         <div class="form-group">
-          <label for="vs">Supply Voltage (Vs)</label>
+          <label for="vs">Supply / Initial Voltage (V<sub>s</sub>)</label>
           <div class="input-wrap">
             <input type="number" id="vs" value="5" step="any" min="0">
             <span class="input-unit">V</span>
@@ -82,19 +109,17 @@
         </div>
       </div>
 
-      <table class="data-table tau-table" id="tau-table">
-        <thead>
-          <tr>
-            <th>Time Constant (τ)</th>
-            <th>Time (s)</th>
-            <th>Charge %</th>
-            <th>Charge V</th>
-            <th>Discharge V</th>
-            <th>Progress</th>
-          </tr>
-        </thead>
-        <tbody id="tau-body"></tbody>
-      </table>
+      <div class="graph-legend">
+        <span><span class="legend-dot" style="background:#2563eb;height:3px;display:inline-block;width:24px;vertical-align:middle;margin-right:6px;border-radius:2px;"></span>Charging</span>
+        <span><span class="legend-dot" style="background:#dc2626;height:3px;display:inline-block;width:24px;vertical-align:middle;margin-right:6px;border-radius:2px;"></span>Discharging</span>
+        <span style="color:var(--text-muted);">· · ·&nbsp; τ markers</span>
+        <span style="color:var(--text-muted);margin-left:auto;font-size:.8rem;">Hover to inspect</span>
+      </div>
+
+      <div id="rc-graph-wrap">
+        <canvas id="rc-canvas" height="320"></canvas>
+        <div id="rc-tooltip"></div>
+      </div>
 
       <div class="info-box">
         💡 A capacitor is considered fully charged after <strong>5τ</strong> (~99.3%). Most designs use <strong>3τ</strong> (~95%) as a practical threshold.
@@ -132,43 +157,17 @@ function calcRC() {
 
   tau_s = R * C;
   const fc = 1 / (2 * Math.PI * tau_s);
-  const t63 = tau_s;
-  const t95 = 3 * tau_s;
-  const t99 = 5 * tau_s;
 
   document.getElementById('grid-rc').innerHTML = `
     <div class="result-item"><div class="result-label">Time Constant (τ)</div><div class="result-value">${fmtTime(tau_s)}</div></div>
     <div class="result-item"><div class="result-label">Cutoff Freq (f<sub>c</sub>)</div><div class="result-value">${fmtFreq(fc)}</div></div>
-    <div class="result-item"><div class="result-label">63% Charge (1τ)</div><div class="result-value">${fmtTime(t63)}</div></div>
-    <div class="result-item"><div class="result-label">95% Charge (3τ)</div><div class="result-value">${fmtTime(t95)}</div></div>
-    <div class="result-item"><div class="result-label">99.3% Charge (5τ)</div><div class="result-value">${fmtTime(t99)}</div></div>
+    <div class="result-item"><div class="result-label">63.2% Charge (1τ)</div><div class="result-value">${fmtTime(tau_s)}</div></div>
+    <div class="result-item"><div class="result-label">95.0% Charge (3τ)</div><div class="result-value">${fmtTime(3*tau_s)}</div></div>
+    <div class="result-item"><div class="result-label">99.3% Charge (5τ)</div><div class="result-value">${fmtTime(5*tau_s)}</div></div>
   `;
   document.getElementById('res-rc').classList.add('visible');
-  updateTauTable();
   document.getElementById('charge-card').style.display = '';
-}
-
-function updateTauTable() {
-  if (!tau_s) return;
-  const vs = parseFloat(document.getElementById('vs').value) || 5;
-  const taus = [0.5, 1, 2, 3, 4, 5, 7, 10];
-  const rows = taus.map(n => {
-    const t = n * tau_s;
-    const pct = (1 - Math.exp(-n)) * 100;
-    const vc = vs * (1 - Math.exp(-n));
-    const vd = vs * Math.exp(-n);
-    return `<tr>
-      <td>${n}τ</td>
-      <td>${fmtTime(t)}</td>
-      <td>${pct.toFixed(1)}%</td>
-      <td>${vc.toFixed(3)} V</td>
-      <td>${vd.toFixed(3)} V</td>
-      <td>
-        <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
-      </td>
-    </tr>`;
-  }).join('');
-  document.getElementById('tau-body').innerHTML = rows;
+  drawGraph();
 }
 
 function clearRC() {
@@ -179,7 +178,220 @@ function clearRC() {
   tau_s = null;
 }
 
-document.getElementById('vs').addEventListener('input', updateTauTable);
+// ── Graph ──────────────────────────────────────────────────────────────────
+
+const canvas  = document.getElementById('rc-canvas');
+const tooltip = document.getElementById('rc-tooltip');
+const ctx     = canvas.getContext('2d');
+
+const PAD = { top: 24, right: 24, bottom: 52, left: 60 };
+const TAU_MAX = 5;   // x-axis shows 0 → 5τ
+
+function devicePx(cssW, cssH) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = cssW * dpr;
+  canvas.height = cssH * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function drawGraph() {
+  if (!tau_s) return;
+  const vs = parseFloat(document.getElementById('vs').value) || 5;
+
+  const cssW = canvas.parentElement.clientWidth - 16;  // wrap padding
+  const cssH = 280;
+  canvas.style.height = cssH + 'px';
+  devicePx(cssW, cssH);
+
+  const plotW = cssW - PAD.left - PAD.right;
+  const plotH = cssH - PAD.top  - PAD.bottom;
+
+  // helpers: data → canvas coords
+  function xPx(tauFrac) { return PAD.left + (tauFrac / TAU_MAX) * plotW; }
+  function yPx(v)        { return PAD.top  + (1 - v / vs) * plotH; }
+
+  // ── Background ──
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, cssW, cssH);
+
+  // ── Grid & tau markers ──
+  ctx.save();
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth   = 1;
+  ctx.setLineDash([4, 3]);
+
+  // Horizontal % lines
+  const pctLines = [0.25, 0.5, 0.632, 0.75, 1.0];
+  pctLines.forEach(p => {
+    const y = yPx(p * vs);
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + plotW, y); ctx.stroke();
+  });
+
+  // Tau vertical lines
+  ctx.strokeStyle = '#cbd5e1';
+  for (let n = 1; n <= TAU_MAX; n++) {
+    const x = xPx(n);
+    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + plotH); ctx.stroke();
+  }
+  ctx.restore();
+
+  // ── Axes ──
+  ctx.save();
+  ctx.strokeStyle = '#64748b';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, PAD.top); ctx.lineTo(PAD.left, PAD.top + plotH);
+  ctx.moveTo(PAD.left, PAD.top + plotH); ctx.lineTo(PAD.left + plotW, PAD.top + plotH);
+  ctx.stroke();
+  ctx.restore();
+
+  // ── Y axis labels ──
+  ctx.save();
+  ctx.fillStyle = '#64748b';
+  ctx.font = '11px system-ui,sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  const yTicks = [0, 0.25, 0.5, 0.75, 1.0];
+  yTicks.forEach(p => {
+    const v = p * vs;
+    const y = yPx(v);
+    ctx.fillText(v.toFixed(v === 0 ? 0 : (vs < 2 ? 2 : 1)) + ' V', PAD.left - 6, y);
+    // small tick
+    ctx.save(); ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(PAD.left-3, y); ctx.lineTo(PAD.left, y); ctx.stroke();
+    ctx.restore();
+  });
+  // Y axis title
+  ctx.save();
+  ctx.translate(14, PAD.top + plotH/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#475569'; ctx.font = '12px system-ui,sans-serif';
+  ctx.fillText('Voltage (V)', 0, 0);
+  ctx.restore();
+  ctx.restore();
+
+  // ── X axis labels ──
+  ctx.save();
+  ctx.fillStyle = '#64748b';
+  ctx.font = '11px system-ui,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (let n = 0; n <= TAU_MAX; n++) {
+    const x = xPx(n);
+    ctx.fillText(n + 'τ', x, PAD.top + plotH + 6);
+    // tick
+    ctx.save(); ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x, PAD.top+plotH); ctx.lineTo(x, PAD.top+plotH+3); ctx.stroke();
+    ctx.restore();
+  }
+  // X axis subtitle (actual times)
+  ctx.fillStyle = '#94a3b8'; ctx.font = '10px system-ui,sans-serif';
+  for (let n = 1; n <= TAU_MAX; n++) {
+    const x = xPx(n);
+    ctx.fillText(fmtTime(n * tau_s), x, PAD.top + plotH + 20);
+  }
+  // X title
+  ctx.fillStyle = '#475569'; ctx.font = '12px system-ui,sans-serif';
+  ctx.fillText('Time', PAD.left + plotW/2, PAD.top + plotH + 38);
+  ctx.restore();
+
+  // ── Curves — N points ──
+  const N = 400;
+
+  // Charging curve
+  ctx.save();
+  ctx.beginPath();
+  ctx.strokeStyle = '#2563eb';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  for (let i = 0; i <= N; i++) {
+    const tFrac = (i / N) * TAU_MAX;
+    const v = vs * (1 - Math.exp(-tFrac));
+    if (i === 0) ctx.moveTo(xPx(tFrac), yPx(v));
+    else         ctx.lineTo(xPx(tFrac), yPx(v));
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // Discharging curve
+  ctx.save();
+  ctx.beginPath();
+  ctx.strokeStyle = '#dc2626';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  for (let i = 0; i <= N; i++) {
+    const tFrac = (i / N) * TAU_MAX;
+    const v = vs * Math.exp(-tFrac);
+    if (i === 0) ctx.moveTo(xPx(tFrac), yPx(v));
+    else         ctx.lineTo(xPx(tFrac), yPx(v));
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // ── Tau annotation dots ──
+  const annots = [
+    { n: 1, pct: 63.2 }, { n: 2, pct: 86.5 },
+    { n: 3, pct: 95.0 }, { n: 4, pct: 98.2 }, { n: 5, pct: 99.3 },
+  ];
+  ctx.save();
+  ctx.font = 'bold 10px system-ui,sans-serif';
+  annots.forEach(({ n, pct }) => {
+    const v = vs * (1 - Math.exp(-n));
+    const x = xPx(n), y = yPx(v);
+    ctx.fillStyle = '#2563eb';
+    ctx.beginPath(); ctx.arc(x, y, 3.5, 0, 2*Math.PI); ctx.fill();
+    ctx.fillStyle = '#1d4ed8';
+    ctx.textAlign  = n < 4 ? 'left' : 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(pct + '%', x + (n < 4 ? 5 : -5), y - 3);
+  });
+  ctx.restore();
+}
+
+// ── Tooltip on hover ──────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', e => {
+  if (!tau_s) return;
+  const vs   = parseFloat(document.getElementById('vs').value) || 5;
+  const wrap = canvas.parentElement;
+  const rect = canvas.getBoundingClientRect();
+  const mx   = e.clientX - rect.left;
+  const my   = e.clientY - rect.top;
+
+  const cssW  = rect.width;
+  const plotW = cssW - PAD.left - PAD.right;
+
+  if (mx < PAD.left || mx > PAD.left + plotW) { tooltip.style.display='none'; return; }
+
+  const tFrac = ((mx - PAD.left) / plotW) * TAU_MAX;
+  const t_s   = tFrac * tau_s;
+  const vc    = vs * (1 - Math.exp(-tFrac));
+  const vd    = vs * Math.exp(-tFrac);
+  const pct   = (1 - Math.exp(-tFrac)) * 100;
+
+  tooltip.innerHTML =
+    `<strong>t = ${fmtTime(t_s)} &nbsp;(${tFrac.toFixed(2)}τ)</strong><br>` +
+    `<span style="color:#93c5fd">▬</span> Charge: ${vc.toFixed(3)} V &nbsp;(${pct.toFixed(1)}%)<br>` +
+    `<span style="color:#fca5a5">▬</span> Discharge: ${vd.toFixed(3)} V &nbsp;(${(100-pct).toFixed(1)}%)`;
+
+  // Position tooltip so it stays within the wrap
+  let tx = mx + 12;
+  let ty = my - 10;
+  const tw = 210, th = 70;
+  if (tx + tw > wrap.clientWidth - 8) tx = mx - tw - 12;
+  if (ty + th > wrap.clientHeight - 4) ty = my - th - 10;
+  tooltip.style.left    = tx + 'px';
+  tooltip.style.top     = ty + 'px';
+  tooltip.style.display = 'block';
+});
+
+canvas.addEventListener('mouseleave', () => { tooltip.style.display='none'; });
+
+// Redraw on Vs change or window resize
+document.getElementById('vs').addEventListener('input', drawGraph);
+window.addEventListener('resize', drawGraph);
 </script>
 </body>
 </html>
