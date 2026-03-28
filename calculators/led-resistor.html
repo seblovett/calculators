@@ -64,8 +64,8 @@
       <div class="schematic-wrap">
         <svg viewBox="0 0 300 285" width="210" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">
           <defs>
-            <marker id="ledArrow" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
-              <path d="M0,0 L6,3 L0,6 Z" fill="#f59e0b"/>
+            <marker id="ledArrow" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto">
+              <path d="M0,0 L7,3.5 L0,7 Z" fill="#1e293b"/>
             </marker>
             <marker id="curArrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
               <path d="M0,0 L7,3.5 L0,7 Z" fill="#94a3b8"/>
@@ -104,11 +104,11 @@
           <text id="sch-vf-val" x="140" y="148" font-size="10.5" fill="#64748b">Vf</text>
           <text id="sch-n-val"  x="140" y="163" font-size="10.5" fill="#64748b"></text>
 
-          <!-- Light arrows: two short parallel arrows at 45° upper-right from body -->
-          <!-- Arrow 1 -->
-          <line x1="118" y1="140" x2="132" y2="126" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" marker-end="url(#ledArrow)"/>
-          <!-- Arrow 2 (offset perpendicular — 6px along the (1,1) direction) -->
-          <line x1="124" y1="146" x2="138" y2="132" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" marker-end="url(#ledArrow)"/>
+          <!-- Light arrows: emerge from near the cathode junction, parallel at 45° upper-right -->
+          <!-- Starts are adjacent to the right edge of the triangle near the lower body,  -->
+          <!-- offset perpendicular (7,7) to each other so they read as truly parallel.    -->
+          <line x1="120" y1="155" x2="140" y2="135" stroke="#1e293b" stroke-width="2" stroke-linecap="round" marker-end="url(#ledArrow)"/>
+          <line x1="128" y1="163" x2="148" y2="143" stroke="#1e293b" stroke-width="2" stroke-linecap="round" marker-end="url(#ledArrow)"/>
 
           <!-- Wire: LED cathode → GND -->
           <line x1="100" y1="174" x2="100" y2="218" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
