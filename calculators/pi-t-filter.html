@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pi & T Filter Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .schematic-wrap {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-button {
+      padding: 0.75rem 1.5rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #64748b;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab-button.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+    }
+
+    .tab-button:hover {
+      color: #1e293b;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+  <main class="main">
+    <div class="page-title">〜 Pi & T Filter Calculator</div>
+    <div class="page-subtitle">Design 3rd-order Butterworth LC low-pass filters in Pi (CLC) or T (LCL) topology.</div>
+
+    <div class="card">
+      <div class="tabs">
+        <button class="tab-button active" data-tab="pi">Pi Filter (CLC)</button>
+        <button class="tab-button" data-tab="t">T Filter (LCL)</button>
+      </div>
+
+      <!-- Shared Inputs -->
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="fc">Cutoff Frequency</label>
+          <div class="unit-input" data-type="frequency" data-default="1e3">
+            <input type="number" id="fc" value="1">
+            <select id="fc-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="z0">Impedance Z₀</label>
+          <div class="unit-input" data-type="resistance" data-default="1">
+            <input type="number" id="z0" value="50">
+            <select id="z0-unit"></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- PI FILTER TAB -->
+      <div class="tab-content active" id="pi-content">
+        <div class="formula-block">
+          <strong>Formulas:</strong>
+          <div style="margin-top: 0.5rem; font-family: monospace; font-size: 0.95rem;">
+            C₁ = C₂ = 1 / (Z₀ × ωc)<br>
+            L = 2Z₀ / ωc
+          </div>
+          <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b;">
+            where ωc = 2π × fc
+          </div>
+        </div>
+
+        <div class="schematic-wrap">
+          <svg viewBox="0 0 300 140" width="260" xmlns="http://www.w3.org/2000/svg">
+            <!-- Input wire and label -->
+            <line x1="20" y1="50" x2="60" y2="50" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+            <text x="14" y="54" font-size="12" fill="#2563eb" font-weight="700" text-anchor="end">Vin</text>
+
+            <!-- C1 shunt -->
+            <line x1="60" y1="50" x2="60" y2="82" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+            <!-- Capacitor symbol centered at (60, 90) -->
+            <line x1="50" y1="90" x2="70" y2="90" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="50" y1="98" x2="70" y2="98" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="60" y1="98" x2="60" y2="110" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+            <text x="45" y="75" font-size="11" fill="#1e293b" font-weight="600">C1</text>
+
+            <!-- GND at (60, 110) -->
+            <line x1="50" y1="110" x2="70" y2="110" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+            <line x1="54" y1="118" x2="66" y2="118" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+            <line x1="57" y1="126" x2="63" y2="126" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- Series wire to L -->
+            <line x1="60" y1="50" x2="108" y2="50" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+            <!-- L (series inductor) -->
+            <path d="M108,50 a12,10 0 0,1 24,0 a12,10 0 0,1 24,0 a12,10 0 0,1 24,0"
+                  fill="none" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+            <text x="150" y="38" font-size="11" fill="#1e293b" font-weight="600" text-anchor="middle">L</text>
+
+            <!-- Wire after L to C2 -->
+            <line x1="192" y1="50" x2="240" y2="50" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+            <!-- C2 shunt -->
+            <line x1="240" y1="50" x2="240" y2="82" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+            <!-- Capacitor symbol centered at (240, 90) -->
+            <line x1="230" y1="90" x2="250" y2="90" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="230" y1="98" x2="250" y2="98" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="240" y1="98" x2="240" y2="110" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+            <text x="255" y="75" font-size="11" fill="#1e293b" font-weight="600">C2</text>
+
+            <!-- GND at (240, 110) -->
+            <line x1="230" y1="110" x2="250" y2="110" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+            <line x1="234" y1="118" x2="246" y2="118" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+            <line x1="237" y1="126" x2="243" y2="126" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- Output wire -->
+            <line x1="240" y1="50" x2="280" y2="50" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+            <text x="286" y="54" font-size="12" fill="#2563eb" font-weight="700">Vout</text>
+          </svg>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calculatePi()">Calculate</button>
+          <button class="btn btn-secondary" onclick="clearPi()">Clear</button>
+        </div>
+
+        <div class="results" id="pi-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">C₁ = C₂</div>
+              <div class="result-value" id="pi-c">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">L</div>
+              <div class="result-value" id="pi-l">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Cutoff Frequency</div>
+              <div class="result-value" id="pi-fc-check">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Characteristic Impedance</div>
+              <div class="result-value" id="pi-z0-check">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- T FILTER TAB -->
+      <div class="tab-content" id="t-content">
+        <div class="formula-block">
+          <strong>Formulas:</strong>
+          <div style="margin-top: 0.5rem; font-family: monospace; font-size: 0.95rem;">
+            L₁ = L₂ = Z₀ / ωc<br>
+            C = 2 / (Z₀ × ωc)
+          </div>
+          <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b;">
+            where ωc = 2π × fc
+          </div>
+        </div>
+
+        <div class="schematic-wrap">
+          <svg viewBox="0 0 300 140" width="260" xmlns="http://www.w3.org/2000/svg">
+            <!-- Input wire and label -->
+            <line x1="20" y1="50" x2="60" y2="50" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+            <text x="14" y="54" font-size="12" fill="#2563eb" font-weight="700" text-anchor="end">Vin</text>
+
+            <!-- L1 (series inductor) -->
+            <path d="M60,50 a12,10 0 0,1 24,0 a12,10 0 0,1 24,0 a12,10 0 0,1 24,0"
+                  fill="none" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+            <text x="114" y="38" font-size="11" fill="#1e293b" font-weight="600">L1</text>
+
+            <!-- Wire from L1 to junction -->
+            <line x1="132" y1="50" x2="150" y2="50" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+            <!-- Junction dot at (150, 50) -->
+            <circle cx="150" cy="50" r="3.5" fill="#1e293b"/>
+
+            <!-- C shunt from junction -->
+            <line x1="150" y1="50" x2="150" y2="78" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+            <!-- Capacitor symbol centered at (150, 85) -->
+            <line x1="140" y1="85" x2="160" y2="85" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="140" y1="93" x2="160" y2="93" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="150" y1="93" x2="150" y2="110" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+            <text x="165" y="75" font-size="11" fill="#1e293b" font-weight="600">C</text>
+
+            <!-- GND at (150, 110) -->
+            <line x1="140" y1="110" x2="160" y2="110" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+            <line x1="144" y1="118" x2="156" y2="118" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+            <line x1="147" y1="126" x2="153" y2="126" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- Wire from junction to L2 -->
+            <line x1="150" y1="50" x2="192" y2="50" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+            <!-- L2 (series inductor) -->
+            <path d="M192,50 a12,10 0 0,1 24,0 a12,10 0 0,1 24,0 a12,10 0 0,1 24,0"
+                  fill="none" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+            <text x="232" y="38" font-size="11" fill="#1e293b" font-weight="600">L2</text>
+
+            <!-- Output wire -->
+            <line x1="240" y1="50" x2="280" y2="50" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+            <text x="286" y="54" font-size="12" fill="#2563eb" font-weight="700">Vout</text>
+          </svg>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calculateT()">Calculate</button>
+          <button class="btn btn-secondary" onclick="clearT()">Clear</button>
+        </div>
+
+        <div class="results" id="t-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">L₁ = L₂</div>
+              <div class="result-value" id="t-l">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">C</div>
+              <div class="result-value" id="t-c">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Cutoff Frequency</div>
+              <div class="result-value" id="t-fc-check">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Characteristic Impedance</div>
+              <div class="result-value" id="t-z0-check">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  function fmt(n, unit='') {
+    if (n === null || isNaN(n) || !isFinite(n)) return '—';
+    if (unit === 'Ω') {
+      if (n >= 1e6) return (n/1e6).toPrecision(4) + ' MΩ';
+      if (n >= 1e3) return (n/1e3).toPrecision(4) + ' kΩ';
+      return parseFloat(n.toPrecision(5)) + ' Ω';
+    }
+    if (unit === 'H') {
+      if (n >= 1) return parseFloat(n.toPrecision(4)) + ' H';
+      if (n >= 1e-3) return parseFloat((n*1e3).toPrecision(4)) + ' mH';
+      if (n >= 1e-6) return parseFloat((n*1e6).toPrecision(4)) + ' µH';
+      return parseFloat((n*1e9).toPrecision(4)) + ' nH';
+    }
+    if (unit === 'F') {
+      if (n >= 1) return parseFloat(n.toPrecision(4)) + ' F';
+      if (n >= 1e-3) return parseFloat((n*1e3).toPrecision(4)) + ' mF';
+      if (n >= 1e-6) return parseFloat((n*1e6).toPrecision(4)) + ' µF';
+      if (n >= 1e-9) return parseFloat((n*1e9).toPrecision(4)) + ' nF';
+      return parseFloat((n*1e12).toPrecision(4)) + ' pF';
+    }
+    const abs = Math.abs(n);
+    if (abs >= 1e6 || (abs < 1e-3 && abs > 0)) return parseFloat(n.toPrecision(4)) + (unit ? ' '+unit : '');
+    return parseFloat(n.toPrecision(5)) + (unit ? ' '+unit : '');
+  }
+
+  function calculatePi() {
+    const fc = unitVal('fc');  // Hz
+    const z0 = unitVal('z0');  // Ω
+
+    if (fc <= 0 || z0 <= 0) {
+      alert('Frequency and impedance must be positive.');
+      return;
+    }
+
+    const omega_c = 2 * Math.PI * fc;
+    const c_val = 1 / (z0 * omega_c);  // F
+    const l_val = 2 * z0 / omega_c;    // H
+
+    document.getElementById('pi-c').textContent = fmt(c_val, 'F');
+    document.getElementById('pi-l').textContent = fmt(l_val, 'H');
+    document.getElementById('pi-fc-check').textContent = fmt(fc, 'Hz');
+    document.getElementById('pi-z0-check').textContent = fmt(z0, 'Ω');
+
+    document.getElementById('pi-results').classList.add('visible');
+  }
+
+  function clearPi() {
+    document.getElementById('fc').value = '';
+    document.getElementById('z0').value = '';
+    document.getElementById('pi-results').classList.remove('visible');
+    document.getElementById('pi-c').textContent = '—';
+    document.getElementById('pi-l').textContent = '—';
+    document.getElementById('pi-fc-check').textContent = '—';
+    document.getElementById('pi-z0-check').textContent = '—';
+  }
+
+  function calculateT() {
+    const fc = unitVal('fc');  // Hz
+    const z0 = unitVal('z0');  // Ω
+
+    if (fc <= 0 || z0 <= 0) {
+      alert('Frequency and impedance must be positive.');
+      return;
+    }
+
+    const omega_c = 2 * Math.PI * fc;
+    const l_val = z0 / omega_c;       // H
+    const c_val = 2 / (z0 * omega_c); // F
+
+    document.getElementById('t-l').textContent = fmt(l_val, 'H');
+    document.getElementById('t-c').textContent = fmt(c_val, 'F');
+    document.getElementById('t-fc-check').textContent = fmt(fc, 'Hz');
+    document.getElementById('t-z0-check').textContent = fmt(z0, 'Ω');
+
+    document.getElementById('t-results').classList.add('visible');
+  }
+
+  function clearT() {
+    document.getElementById('fc').value = '';
+    document.getElementById('z0').value = '';
+    document.getElementById('t-results').classList.remove('visible');
+    document.getElementById('t-l').textContent = '—';
+    document.getElementById('t-c').textContent = '—';
+    document.getElementById('t-fc-check').textContent = '—';
+    document.getElementById('t-z0-check').textContent = '—';
+  }
+
+  // Tab switching
+  document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', function() {
+      const tabName = this.dataset.tab;
+      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById(tabName + '-content').classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

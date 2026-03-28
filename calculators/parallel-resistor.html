@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parallel Resistor Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .resistor-row {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-end;
+      margin-bottom: 0.75rem;
+    }
+    .resistor-row .form-group {
+      flex: 1;
+      margin: 0;
+    }
+    .remove-btn {
+      padding: 0.5rem 0.75rem;
+      background: #ef4444;
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      height: 40px;
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .remove-btn:hover {
+      background: #dc2626;
+    }
+    .remove-btn:not(.visible) {
+      display: none;
+    }
+    .tab-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+  <main class="main">
+    <div class="page-title">⫴ Parallel Resistor Calculator</div>
+    <div class="page-subtitle">Find the equivalent resistance of resistors in parallel (or series).</div>
+
+    <div class="card">
+      <div class="tab-buttons">
+        <button class="btn btn-primary" data-tab="parallel">Parallel</button>
+        <button class="btn btn-secondary" data-tab="series">Series</button>
+      </div>
+
+      <!-- PARALLEL TAB -->
+      <div class="tab-content active" data-tab-id="parallel">
+        <div class="formula-block">
+          <strong>Formula:</strong> 1/R<sub>eq</sub> = 1/R₁ + 1/R₂ + … + 1/Rₙ
+        </div>
+
+        <div id="parallel-inputs"></div>
+
+        <div class="actions" style="margin-top: 1rem;">
+          <button class="btn btn-secondary" id="parallel-add-btn">+ Add Resistor</button>
+          <button class="btn btn-primary" id="parallel-calc-btn">Calculate</button>
+        </div>
+
+        <div class="error" id="parallel-error"></div>
+
+        <div class="results" id="parallel-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">Equivalent Resistance</div>
+              <div class="result-value" id="parallel-req"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Resistors Used</div>
+              <div class="result-value" id="parallel-count"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Total Conductance</div>
+              <div class="result-value" id="parallel-cond"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SERIES TAB -->
+      <div class="tab-content" data-tab-id="series">
+        <div class="formula-block">
+          <strong>Formula:</strong> R<sub>eq</sub> = R₁ + R₂ + … + Rₙ
+        </div>
+
+        <div id="series-inputs"></div>
+
+        <div class="actions" style="margin-top: 1rem;">
+          <button class="btn btn-secondary" id="series-add-btn">+ Add Resistor</button>
+          <button class="btn btn-primary" id="series-calc-btn">Calculate</button>
+        </div>
+
+        <div class="error" id="series-error"></div>
+
+        <div class="results" id="series-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">Equivalent Resistance</div>
+              <div class="result-value" id="series-req"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Resistors Used</div>
+              <div class="result-value" id="series-count"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Average Resistance</div>
+              <div class="result-value" id="series-avg"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  function fmt(n, unit='') {
+    if (n === null || isNaN(n) || !isFinite(n)) return '—';
+    if (unit === 'Ω') {
+      if (n >= 1e6) return (n/1e6).toPrecision(4) + ' MΩ';
+      if (n >= 1e3) return (n/1e3).toPrecision(4) + ' kΩ';
+      return parseFloat(n.toPrecision(5)) + ' Ω';
+    }
+    const abs = Math.abs(n);
+    if (abs >= 1e6 || (abs < 1e-3 && abs > 0)) return parseFloat(n.toPrecision(4)) + (unit ? ' '+unit : '');
+    return parseFloat(n.toPrecision(5)) + (unit ? ' '+unit : '');
+  }
+
+  const resistorState = {
+    parallel: [],
+    series: []
+  };
+
+  function createResistorInput(mode, index) {
+    const fieldId = `${mode}-r${index}`;
+    return `
+      <div class="resistor-row">
+        <div class="form-group">
+          <label>R${index}</label>
+          <div class="unit-input" data-type="resistance" data-default="1e3">
+            <input type="number" id="${fieldId}" placeholder="0" step="any">
+            <select id="${fieldId}-unit"></select>
+          </div>
+        </div>
+        <button type="button" class="remove-btn ${index <= 2 ? '' : 'visible'}" data-index="${index}" onclick="removeResistor('${mode}', ${index})">✕</button>
+      </div>
+    `;
+  }
+
+  function renderResistors(mode) {
+    const container = document.getElementById(`${mode}-inputs`);
+    const count = resistorState[mode].length;
+    let html = '';
+    for (let i = 1; i <= count; i++) {
+      html += createResistorInput(mode, i);
+    }
+    container.innerHTML = html;
+    // Re-populate unit selects after rendering
+    if (window.populateUnitSelects) {
+      window.populateUnitSelects();
+    }
+  }
+
+  function addResistor(mode) {
+    if (resistorState[mode].length < 8) {
+      resistorState[mode].push(null);
+      renderResistors(mode);
+    }
+  }
+
+  function removeResistor(mode, index) {
+    if (resistorState[mode].length > 2) {
+      resistorState[mode].splice(index - 1, 1);
+      renderResistors(mode);
+    }
+  }
+
+  function calculateParallel() {
+    const errorEl = document.getElementById('parallel-error');
+    const resultsEl = document.getElementById('parallel-results');
+    errorEl.textContent = '';
+    errorEl.classList.remove('visible');
+    resultsEl.classList.remove('visible');
+
+    const values = [];
+    for (let i = 1; i <= resistorState.parallel.length; i++) {
+      const val = unitVal(`parallel-r${i}`);
+      if (val !== null && val > 0) {
+        values.push(val);
+      }
+    }
+
+    if (values.length < 2) {
+      errorEl.textContent = 'Enter at least 2 resistor values.';
+      errorEl.classList.add('visible');
+      return;
+    }
+
+    const sumReciprocals = values.reduce((sum, r) => sum + 1/r, 0);
+    const req = 1 / sumReciprocals;
+    const conductance = sumReciprocals; // in Siemens
+
+    document.getElementById('parallel-req').textContent = fmt(req, 'Ω');
+    document.getElementById('parallel-count').textContent = values.length;
+    document.getElementById('parallel-cond').textContent = parseFloat(conductance.toPrecision(4)) + ' S';
+
+    resultsEl.classList.add('visible');
+  }
+
+  function calculateSeries() {
+    const errorEl = document.getElementById('series-error');
+    const resultsEl = document.getElementById('series-results');
+    errorEl.textContent = '';
+    errorEl.classList.remove('visible');
+    resultsEl.classList.remove('visible');
+
+    const values = [];
+    for (let i = 1; i <= resistorState.series.length; i++) {
+      const val = unitVal(`series-r${i}`);
+      if (val !== null && val > 0) {
+        values.push(val);
+      }
+    }
+
+    if (values.length < 2) {
+      errorEl.textContent = 'Enter at least 2 resistor values.';
+      errorEl.classList.add('visible');
+      return;
+    }
+
+    const req = values.reduce((sum, r) => sum + r, 0);
+    const avg = req / values.length;
+
+    document.getElementById('series-req').textContent = fmt(req, 'Ω');
+    document.getElementById('series-count').textContent = values.length;
+    document.getElementById('series-avg').textContent = fmt(avg, 'Ω');
+
+    resultsEl.classList.add('visible');
+  }
+
+  // Tab switching
+  document.querySelectorAll('[data-tab]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tabId = this.dataset.tab;
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelector(`[data-tab-id="${tabId}"]`).classList.add('active');
+      document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('btn-primary'));
+      document.querySelectorAll('[data-tab]').forEach(b => b.classList.add('btn-secondary'));
+      this.classList.remove('btn-secondary');
+      this.classList.add('btn-primary');
+    });
+  });
+
+  // Initialize with 2 resistors per mode
+  resistorState.parallel = [null, null];
+  resistorState.series = [null, null];
+  renderResistors('parallel');
+  renderResistors('series');
+
+  document.getElementById('parallel-add-btn').addEventListener('click', () => addResistor('parallel'));
+  document.getElementById('series-add-btn').addEventListener('click', () => addResistor('series'));
+  document.getElementById('parallel-calc-btn').addEventListener('click', calculateParallel);
+  document.getElementById('series-calc-btn').addEventListener('click', calculateSeries);
+</script>
+</body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wheatstone Bridge Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .tab-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .schematic-wrap {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+  <main class="main">
+    <div class="page-title">🌉 Wheatstone Bridge Calculator</div>
+    <div class="page-subtitle">Find an unknown resistance or calculate bridge output voltage.</div>
+
+    <div class="card">
+      <div class="tab-buttons">
+        <button class="btn btn-primary" data-tab="find-rx">Find Rx (balanced)</button>
+        <button class="btn btn-secondary" data-tab="bridge-voltage">Bridge Output Voltage</button>
+      </div>
+
+      <!-- TAB 1: FIND RX (BALANCED BRIDGE) -->
+      <div class="tab-content active" data-tab-id="find-rx">
+        <div class="schematic-wrap">
+          <!--
+            Diamond layout. Nodes: Top(155,22) Left(65,145) Right(245,145) Bottom(155,268)
+            Resistor midpoints: R1(110,83) R2(200,83) R3(110,207) Rx(200,207)
+            Rects drawn at origin (x=−15,y=−30,w=30,h=60) then translate+rotate.
+            White fill covers the underlying wire within each component body.
+          -->
+          <svg viewBox="0 0 310 295" width="275" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">
+
+            <!-- ── Arm wires (drawn first so rects cover them) ── -->
+            <line x1="155" y1="22"  x2="65"  y2="145" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="155" y1="22"  x2="245" y2="145" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="65"  y1="145" x2="155" y2="268" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="245" y1="145" x2="155" y2="268" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+
+            <!-- ── Galvanometer / Vout (dashed) ── -->
+            <line x1="65" y1="145" x2="245" y2="145" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5,4"/>
+            <text x="155" y="140" font-size="11" font-weight="600" fill="#64748b" text-anchor="middle">Vout</text>
+
+            <!-- ── Resistor rects (translate to arm midpoint, rotate to align with wire) ── -->
+            <!-- R1: top-left arm (+36°) -->
+            <g transform="translate(110,83) rotate(36)">
+              <rect x="-15" y="-30" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+            </g>
+            <!-- R2: top-right arm (−36°) -->
+            <g transform="translate(200,83) rotate(-36)">
+              <rect x="-15" y="-30" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+            </g>
+            <!-- R3: bottom-left arm (−36°) -->
+            <g transform="translate(110,207) rotate(-36)">
+              <rect x="-15" y="-30" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+            </g>
+            <!-- Rx: bottom-right arm (+36°) — highlighted as unknown -->
+            <g transform="translate(200,207) rotate(36)">
+              <rect x="-15" y="-30" width="30" height="60" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+            </g>
+
+            <!-- ── Node dots (on top of rects) ── -->
+            <circle cx="155" cy="22"  r="3.5" fill="#1e293b"/>
+            <circle cx="65"  cy="145" r="3.5" fill="#1e293b"/>
+            <circle cx="245" cy="145" r="3.5" fill="#1e293b"/>
+            <circle cx="155" cy="268" r="3.5" fill="#1e293b"/>
+
+            <!-- ── Labels outside the diamond ── -->
+            <text x="155" y="13"  font-size="12" font-weight="700" fill="#2563eb" text-anchor="middle">Vs</text>
+            <text x="45"  y="98"  font-size="12" font-weight="600" fill="#1e293b" text-anchor="end">R1</text>
+            <text x="265" y="98"  font-size="12" font-weight="600" fill="#1e293b">R2</text>
+            <text x="45"  y="220" font-size="12" font-weight="600" fill="#1e293b" text-anchor="end">R3</text>
+            <text x="265" y="220" font-size="12" font-weight="600" fill="#2563eb">Rx</text>
+
+            <!-- ── GND ── -->
+            <line x1="155" y1="268" x2="155" y2="273" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+            <line x1="135" y1="273" x2="175" y2="273" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+            <line x1="141" y1="281" x2="169" y2="281" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+            <line x1="148" y1="289" x2="162" y2="289" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <div class="formula-block">
+          <strong>Formula:</strong> R<sub>x</sub> = R<sub>2</sub> × R<sub>3</sub> / R<sub>1</sub>
+          <div style="font-size: 0.9rem; color: #64748b; margin-top: 0.5rem;">(when bridge is balanced: V<sub>g</sub> = 0)</div>
+        </div>
+
+        <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
+          <div class="form-group">
+            <label>R1</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3">
+              <input type="number" id="find-r1" placeholder="0" step="any">
+              <select id="find-r1-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>R2</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3">
+              <input type="number" id="find-r2" placeholder="0" step="any">
+              <select id="find-r2-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>R3</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3">
+              <input type="number" id="find-r3" placeholder="0" step="any">
+              <select id="find-r3-unit"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="find-rx-calc">Calculate Rx</button>
+        </div>
+
+        <div class="error" id="find-rx-error"></div>
+
+        <div class="results" id="find-rx-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">Unknown Resistance (Rx)</div>
+              <div class="result-value" id="find-rx-value"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Bridge Ratio (R2/R1)</div>
+              <div class="result-value" id="find-rx-ratio"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: BRIDGE OUTPUT VOLTAGE -->
+      <div class="tab-content" data-tab-id="bridge-voltage">
+        <div class="schematic-wrap">
+          <svg viewBox="0 0 310 295" width="275" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">
+
+            <!-- ── Arm wires ── -->
+            <line x1="155" y1="22"  x2="65"  y2="145" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="155" y1="22"  x2="245" y2="145" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="65"  y1="145" x2="155" y2="268" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="245" y1="145" x2="155" y2="268" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+
+            <!-- ── Galvanometer / Vout (dashed) ── -->
+            <line x1="65" y1="145" x2="245" y2="145" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5,4"/>
+            <text x="155" y="140" font-size="11" font-weight="600" fill="#64748b" text-anchor="middle">Vout</text>
+
+            <!-- ── Resistor rects ── -->
+            <g transform="translate(110,83) rotate(36)">
+              <rect x="-15" y="-30" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+            </g>
+            <g transform="translate(200,83) rotate(-36)">
+              <rect x="-15" y="-30" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+            </g>
+            <g transform="translate(110,207) rotate(-36)">
+              <rect x="-15" y="-30" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+            </g>
+            <!-- Rx: no highlight in this tab -->
+            <g transform="translate(200,207) rotate(36)">
+              <rect x="-15" y="-30" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+            </g>
+
+            <!-- ── Node dots ── -->
+            <circle cx="155" cy="22"  r="3.5" fill="#1e293b"/>
+            <circle cx="65"  cy="145" r="3.5" fill="#1e293b"/>
+            <circle cx="245" cy="145" r="3.5" fill="#1e293b"/>
+            <circle cx="155" cy="268" r="3.5" fill="#1e293b"/>
+
+            <!-- ── Labels ── -->
+            <text x="155" y="13"  font-size="12" font-weight="700" fill="#2563eb" text-anchor="middle">Vs</text>
+            <text x="45"  y="98"  font-size="12" font-weight="600" fill="#1e293b" text-anchor="end">R1</text>
+            <text x="265" y="98"  font-size="12" font-weight="600" fill="#1e293b">R2</text>
+            <text x="45"  y="220" font-size="12" font-weight="600" fill="#1e293b" text-anchor="end">R3</text>
+            <text x="265" y="220" font-size="12" font-weight="600" fill="#1e293b">Rx</text>
+
+            <!-- ── GND ── -->
+            <line x1="155" y1="268" x2="155" y2="273" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+            <line x1="135" y1="273" x2="175" y2="273" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+            <line x1="141" y1="281" x2="169" y2="281" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+            <line x1="148" y1="289" x2="162" y2="289" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <div class="formula-block">
+          <strong>Formula:</strong> V<sub>out</sub> = V<sub>s</sub> × [ R<sub>3</sub>/(R<sub>1</sub>+R<sub>3</sub>) − R<sub>x</sub>/(R<sub>2</sub>+R<sub>x</sub>) ]
+        </div>
+
+        <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
+          <div class="form-group">
+            <label>Vs (Supply Voltage)</label>
+            <div class="unit-input" data-type="voltage" data-default="1">
+              <input type="number" id="voltage-vs" placeholder="0" step="any">
+              <select id="voltage-vs-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>R1</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3">
+              <input type="number" id="voltage-r1" placeholder="0" step="any">
+              <select id="voltage-r1-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>R2</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3">
+              <input type="number" id="voltage-r2" placeholder="0" step="any">
+              <select id="voltage-r2-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>R3</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3">
+              <input type="number" id="voltage-r3" placeholder="0" step="any">
+              <select id="voltage-r3-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Rx</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3">
+              <input type="number" id="voltage-rx" placeholder="0" step="any">
+              <select id="voltage-rx-unit"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="voltage-calc">Calculate</button>
+        </div>
+
+        <div class="error" id="voltage-error"></div>
+
+        <div class="results" id="voltage-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">Bridge Output Voltage (Vout)</div>
+              <div class="result-value" id="voltage-vout"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Left Arm Midpoint (Va)</div>
+              <div class="result-value" id="voltage-va"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Right Arm Midpoint (Vb)</div>
+              <div class="result-value" id="voltage-vb"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Bridge Sensitivity</div>
+              <div class="result-value" id="voltage-sensitivity"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  function fmt(n, unit='') {
+    if (n === null || isNaN(n) || !isFinite(n)) return '—';
+    if (unit === 'Ω') {
+      if (n >= 1e6) return (n/1e6).toPrecision(4) + ' MΩ';
+      if (n >= 1e3) return (n/1e3).toPrecision(4) + ' kΩ';
+      return parseFloat(n.toPrecision(5)) + ' Ω';
+    }
+    if (unit === 'V') {
+      const abs = Math.abs(n);
+      if (abs >= 1e6) return (n/1e6).toPrecision(4) + ' MV';
+      if (abs >= 1e3) return (n/1e3).toPrecision(4) + ' kV';
+      if (abs >= 1) return parseFloat(n.toPrecision(5)) + ' V';
+      if (abs >= 1e-3) return parseFloat((n*1e3).toPrecision(4)) + ' mV';
+      if (abs >= 1e-6) return parseFloat((n*1e6).toPrecision(4)) + ' µV';
+      return parseFloat(n.toPrecision(4)) + ' V';
+    }
+    const abs = Math.abs(n);
+    if (abs >= 1e6 || (abs < 1e-3 && abs > 0)) return parseFloat(n.toPrecision(4)) + (unit ? ' '+unit : '');
+    return parseFloat(n.toPrecision(5)) + (unit ? ' '+unit : '');
+  }
+
+  // Tab switching
+  document.querySelectorAll('[data-tab]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tabId = this.dataset.tab;
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelector(`[data-tab-id="${tabId}"]`).classList.add('active');
+      document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('btn-primary'));
+      document.querySelectorAll('[data-tab]').forEach(b => b.classList.add('btn-secondary'));
+      this.classList.remove('btn-secondary');
+      this.classList.add('btn-primary');
+    });
+  });
+
+  // Find Rx (Balanced) Tab
+  document.getElementById('find-rx-calc').addEventListener('click', function() {
+    const errorEl = document.getElementById('find-rx-error');
+    const resultsEl = document.getElementById('find-rx-results');
+
+    errorEl.textContent = '';
+    errorEl.classList.remove('visible');
+    resultsEl.classList.remove('visible');
+
+    const r1 = unitVal('find-r1');
+    const r2 = unitVal('find-r2');
+    const r3 = unitVal('find-r3');
+
+    if (r1 === null || r1 <= 0 || r2 === null || r2 <= 0 || r3 === null || r3 <= 0) {
+      errorEl.textContent = 'Please enter valid values for R1, R2, and R3.';
+      errorEl.classList.add('visible');
+      return;
+    }
+
+    const rx = (r2 * r3) / r1;
+    const ratio = r2 / r1;
+
+    document.getElementById('find-rx-value').textContent = fmt(rx, 'Ω');
+    document.getElementById('find-rx-ratio').textContent = parseFloat(ratio.toPrecision(5));
+
+    resultsEl.classList.add('visible');
+  });
+
+  // Bridge Output Voltage Tab
+  document.getElementById('voltage-calc').addEventListener('click', function() {
+    const errorEl = document.getElementById('voltage-error');
+    const resultsEl = document.getElementById('voltage-results');
+
+    errorEl.textContent = '';
+    errorEl.classList.remove('visible');
+    resultsEl.classList.remove('visible');
+
+    const vs = unitVal('voltage-vs');
+    const r1 = unitVal('voltage-r1');
+    const r2 = unitVal('voltage-r2');
+    const r3 = unitVal('voltage-r3');
+    const rx = unitVal('voltage-rx');
+
+    if (vs === null || vs <= 0 || r1 === null || r1 <= 0 || r2 === null || r2 <= 0 ||
+        r3 === null || r3 <= 0 || rx === null || rx <= 0) {
+      errorEl.textContent = 'Please enter valid values for all inputs.';
+      errorEl.classList.add('visible');
+      return;
+    }
+
+    // Va = Vs × R3/(R1+R3)
+    const va = vs * (r3 / (r1 + r3));
+
+    // Vb = Vs × Rx/(R2+Rx)
+    const vb = vs * (rx / (r2 + rx));
+
+    // Vout = Va - Vb
+    const vout = va - vb;
+
+    // Bridge sensitivity: Vout/Vs
+    const sensitivity = (vout / vs) * 100; // as percentage
+
+    document.getElementById('voltage-vout').textContent = fmt(vout, 'V');
+    document.getElementById('voltage-va').textContent = fmt(va, 'V');
+    document.getElementById('voltage-vb').textContent = fmt(vb, 'V');
+    document.getElementById('voltage-sensitivity').textContent = parseFloat(sensitivity.toPrecision(4)) + ' %';
+
+    resultsEl.classList.add('visible');
+  });
+</script>
+</body>
+</html>

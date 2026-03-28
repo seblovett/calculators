@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Differential Amplifier Calculator — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .schematic-wrap {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-button {
+      padding: 0.75rem 1.5rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #64748b;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab-button.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+    }
+
+    .tab-button:hover {
+      color: #1e293b;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .info-note {
+      background: #f0f9ff;
+      border-left: 4px solid #0284c7;
+      padding: 0.75rem 1rem;
+      border-radius: 0.25rem;
+      font-size: 0.95rem;
+      color: #0c4a6e;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html">Electrical</a>
+    <a href="unit-converter.html">Converters</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+  <script src="../js/units.js"></script>
+  <main class="main">
+    <div class="page-title">⊕ Differential Amplifier Calculator</div>
+    <div class="page-subtitle">Calculate gain and output voltage for an op-amp differential amplifier.</div>
+
+    <div class="card">
+      <div class="schematic-wrap">
+        <svg viewBox="0 0 380 248" width="340" xmlns="http://www.w3.org/2000/svg" style="overflow:visible" font-family="system-ui,sans-serif">
+
+          <!-- ── Op-amp triangle: left edge y=60→180, apex (295,120) ── -->
+          <!-- Inputs land at y=90 (−) and y=150 (+) — both on the left edge -->
+          <polygon points="185,60 185,180 295,120" fill="#f8fafc" stroke="#1e293b" stroke-width="1.8"/>
+          <text x="193" y="95"  font-size="13" fill="#1e293b" font-weight="700">−</text>
+          <text x="193" y="155" font-size="13" fill="#1e293b" font-weight="700">+</text>
+
+          <!-- ── Output wire ── -->
+          <line x1="295" y1="120" x2="348" y2="120" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <circle cx="325" cy="120" r="3.5" fill="#1e293b"/>
+          <text x="353" y="124" font-size="12" fill="#2563eb" font-weight="700">Vout</text>
+
+          <!-- ── INVERTING PATH at y=90 ── -->
+          <line x1="15" y1="90" x2="45" y2="90" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <text x="12" y="94" font-size="12" fill="#2563eb" font-weight="700" text-anchor="end">V1</text>
+          <!-- R1: landscape 60×28, centred at y=90 -->
+          <rect x="45" y="76" width="60" height="28" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+          <text x="75" y="72" font-size="11" fill="#1e293b" font-weight="600" text-anchor="middle">R1</text>
+          <!-- Wire R1 → inv-node, then → op-amp -->
+          <line x1="105" y1="90" x2="155" y2="90" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <circle cx="155" cy="90" r="3.5" fill="#1e293b"/>
+          <line x1="155" y1="90" x2="185" y2="90" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- ── NON-INVERTING PATH at y=150 ── -->
+          <line x1="15" y1="150" x2="45" y2="150" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <text x="12" y="154" font-size="12" fill="#2563eb" font-weight="700" text-anchor="end">V2</text>
+          <!-- R3: landscape 60×28, centred at y=150 -->
+          <rect x="45" y="136" width="60" height="28" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+          <text x="75" y="132" font-size="11" fill="#1e293b" font-weight="600" text-anchor="middle">R3</text>
+          <!-- Wire R3 → noninv-node, then → op-amp -->
+          <line x1="105" y1="150" x2="155" y2="150" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <circle cx="155" cy="150" r="3.5" fill="#1e293b"/>
+          <line x1="155" y1="150" x2="185" y2="150" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- ── R4: from noninv-node (155,150) down to GND ── -->
+          <line x1="155" y1="150" x2="155" y2="175" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <!-- R4 portrait 30×50 -->
+          <rect x="140" y="175" width="30" height="50" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+          <text x="175" y="203" font-size="11" fill="#1e293b" font-weight="600">R4</text>
+          <line x1="155" y1="225" x2="155" y2="242" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <!-- GND symbol -->
+          <line x1="135" y1="242" x2="175" y2="242" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+          <line x1="141" y1="250" x2="169" y2="250" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+          <line x1="148" y1="258" x2="162" y2="258" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+
+          <!-- ── FEEDBACK: tap(325,120) → up → left → down to inv-node(155,90) ── -->
+          <line x1="325" y1="120" x2="325" y2="38" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <line x1="325" y1="38"  x2="155" y2="38"  stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <line x1="155" y1="38"  x2="155" y2="90"  stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <!-- R2: landscape 80×28, sitting on feedback wire at y=38 -->
+          <rect x="195" y="24" width="80" height="28" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+          <text x="235" y="20" font-size="11" fill="#1e293b" font-weight="600" text-anchor="middle">R2</text>
+
+        </svg>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-button active" data-tab="vout">Find Vout</button>
+        <button class="tab-button" data-tab="resistors">Find Resistors (matched)</button>
+      </div>
+
+      <!-- TAB 1: Find Vout -->
+      <div class="tab-content active" id="vout-content">
+        <div class="formula-block">
+          <strong>Formula:</strong>
+          <div style="margin-top: 0.5rem; font-family: monospace; font-size: 0.95rem;">
+            Vout = −V1 × (R2/R1) + V2 × (1 + R2/R1) × R4/(R3 + R4)
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="v1">V1 (Inverting Input)</label>
+            <div class="unit-input" data-type="voltage" data-default="1">
+              <input type="number" id="v1" value="0" step="0.01">
+              <select id="v1-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="v2">V2 (Non-Inverting Input)</label>
+            <div class="unit-input" data-type="voltage" data-default="1">
+              <input type="number" id="v2" value="0" step="0.01">
+              <select id="v2-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="r1-vout">R1</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3">
+              <input type="number" id="r1-vout" value="10">
+              <select id="r1-vout-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="r2-vout">R2</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3">
+              <input type="number" id="r2-vout" value="10">
+              <select id="r2-vout-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="r3-vout">R3</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3">
+              <input type="number" id="r3-vout" value="10">
+              <select id="r3-vout-unit"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="r4-vout">R4</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3">
+              <input type="number" id="r4-vout" value="10">
+              <select id="r4-vout-unit"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calculateVout()">Calculate</button>
+          <button class="btn btn-secondary" onclick="clearVout()">Clear</button>
+        </div>
+
+        <div class="results" id="vout-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">Output Voltage</div>
+              <div class="result-value" id="vout-value">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Differential Gain (R2/R1)</div>
+              <div class="result-value" id="vout-diff-gain">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Common-Mode Gain</div>
+              <div class="result-value" id="vout-cm-gain">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Resistor Match</div>
+              <div class="result-value" id="vout-match">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Find Resistors -->
+      <div class="tab-content" id="resistors-content">
+        <div class="formula-block">
+          <strong>Formulas (Matched Configuration):</strong>
+          <div style="margin-top: 0.5rem; font-family: monospace; font-size: 0.95rem;">
+            Gain = R2 / R1<br>
+            R2 = Gain × R1<br>
+            R3 = R1<br>
+            R4 = R2
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="desired-gain">Desired Gain (Vdiff)</label>
+            <input type="number" id="desired-gain" value="1" step="0.1" min="0">
+          </div>
+          <div class="form-group">
+            <label for="r1-resist">R1</label>
+            <div class="unit-input" data-type="resistance" data-default="1e3">
+              <input type="number" id="r1-resist" value="10">
+              <select id="r1-resist-unit"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calculateResistors()">Calculate</button>
+          <button class="btn btn-secondary" onclick="clearResistors()">Clear</button>
+        </div>
+
+        <div class="results" id="resist-results">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">R1</div>
+              <div class="result-value" id="r1-result">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">R2</div>
+              <div class="result-value" id="r2-result">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">R3 (= R1)</div>
+              <div class="result-value" id="r3-result">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">R4 (= R2)</div>
+              <div class="result-value" id="r4-result">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Achieved Gain</div>
+              <div class="result-value" id="achieve-gain">—</div>
+            </div>
+          </div>
+          <div class="info-note">
+            For matched CMRR, use 0.1% tolerance resistors.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  function fmt(n, unit='') {
+    if (n === null || isNaN(n) || !isFinite(n)) return '—';
+    if (unit === 'Ω') {
+      if (n >= 1e6) return (n/1e6).toPrecision(4) + ' MΩ';
+      if (n >= 1e3) return (n/1e3).toPrecision(4) + ' kΩ';
+      return parseFloat(n.toPrecision(5)) + ' Ω';
+    }
+    if (unit === 'H') {
+      if (n >= 1) return parseFloat(n.toPrecision(4)) + ' H';
+      if (n >= 1e-3) return parseFloat((n*1e3).toPrecision(4)) + ' mH';
+      if (n >= 1e-6) return parseFloat((n*1e6).toPrecision(4)) + ' µH';
+      return parseFloat((n*1e9).toPrecision(4)) + ' nH';
+    }
+    if (unit === 'F') {
+      if (n >= 1) return parseFloat(n.toPrecision(4)) + ' F';
+      if (n >= 1e-3) return parseFloat((n*1e3).toPrecision(4)) + ' mF';
+      if (n >= 1e-6) return parseFloat((n*1e6).toPrecision(4)) + ' µF';
+      if (n >= 1e-9) return parseFloat((n*1e9).toPrecision(4)) + ' nF';
+      return parseFloat((n*1e12).toPrecision(4)) + ' pF';
+    }
+    const abs = Math.abs(n);
+    if (abs >= 1e6 || (abs < 1e-3 && abs > 0)) return parseFloat(n.toPrecision(4)) + (unit ? ' '+unit : '');
+    return parseFloat(n.toPrecision(5)) + (unit ? ' '+unit : '');
+  }
+
+  function calculateVout() {
+    const v1 = unitVal('v1-vout');  // V
+    const v2 = unitVal('v2-vout');  // V
+    const r1 = unitVal('r1-vout');  // Ω
+    const r2 = unitVal('r2-vout');  // Ω
+    const r3 = unitVal('r3-vout');  // Ω
+    const r4 = unitVal('r4-vout');  // Ω
+
+    if (r1 <= 0 || r2 <= 0 || r3 <= 0 || r4 <= 0) {
+      alert('All resistances must be positive.');
+      return;
+    }
+
+    if (r3 + r4 === 0) {
+      alert('R3 + R4 must not be zero.');
+      return;
+    }
+
+    // Vout = −V1×(R2/R1) + V2×(1 + R2/R1)×R4/(R3+R4)
+    const term1 = -v1 * (r2 / r1);
+    const term2 = v2 * (1 + r2 / r1) * (r4 / (r3 + r4));
+    const vout = term1 + term2;
+
+    const diff_gain = r2 / r1;
+
+    // Common-mode gain for general (unmatched) case
+    // When matched (R3=R1, R4=R2), CM gain = 0
+    const r3_r1_ratio = r3 / r1;
+    const r4_r2_ratio = r4 / r2;
+
+    // Simplified check: if matched within 1%, show 0 CMRR, else compute mismatch
+    const r3_match = Math.abs(r3 - r1) / r1 < 0.01;
+    const r4_match = Math.abs(r4 - r2) / r2 < 0.01;
+
+    let cm_gain_val;
+    if (r3_match && r4_match) {
+      cm_gain_val = 0;
+    } else {
+      // Approximate common-mode gain showing mismatch
+      cm_gain_val = Math.abs((r4 * r3 - r2 * r1) / ((r3 + r4) * r1));
+    }
+
+    document.getElementById('vout-value').textContent = fmt(vout, 'V');
+    document.getElementById('vout-diff-gain').textContent = fmt(diff_gain, '');
+    document.getElementById('vout-cm-gain').textContent = fmt(cm_gain_val, '');
+
+    if (r3_match && r4_match) {
+      document.getElementById('vout-match').textContent = 'Matched (R3≈R1, R4≈R2)';
+    } else {
+      document.getElementById('vout-match').textContent = 'Mismatched';
+    }
+
+    document.getElementById('vout-results').classList.add('visible');
+  }
+
+  function clearVout() {
+    document.getElementById('v1-vout').value = '';
+    document.getElementById('v2-vout').value = '';
+    document.getElementById('r1-vout').value = '';
+    document.getElementById('r2-vout').value = '';
+    document.getElementById('r3-vout').value = '';
+    document.getElementById('r4-vout').value = '';
+    document.getElementById('vout-results').classList.remove('visible');
+    document.getElementById('vout-value').textContent = '—';
+    document.getElementById('vout-diff-gain').textContent = '—';
+    document.getElementById('vout-cm-gain').textContent = '—';
+    document.getElementById('vout-match').textContent = '—';
+  }
+
+  function calculateResistors() {
+    const gain = parseFloat(document.getElementById('desired-gain').value);
+    const r1 = unitVal('r1-resist');  // Ω
+
+    if (isNaN(gain) || gain < 0) {
+      alert('Gain must be a non-negative number.');
+      return;
+    }
+
+    if (r1 <= 0) {
+      alert('R1 must be positive.');
+      return;
+    }
+
+    // Matched configuration: R2 = gain × R1, R3 = R1, R4 = R2
+    const r2 = gain * r1;
+    const r3 = r1;
+    const r4 = r2;
+    const achieved_gain = r2 / r1;
+
+    document.getElementById('r1-result').textContent = fmt(r1, 'Ω');
+    document.getElementById('r2-result').textContent = fmt(r2, 'Ω');
+    document.getElementById('r3-result').textContent = fmt(r3, 'Ω');
+    document.getElementById('r4-result').textContent = fmt(r4, 'Ω');
+    document.getElementById('achieve-gain').textContent = fmt(achieved_gain, '');
+
+    document.getElementById('resist-results').classList.add('visible');
+  }
+
+  function clearResistors() {
+    document.getElementById('desired-gain').value = '';
+    document.getElementById('r1-resist').value = '';
+    document.getElementById('resist-results').classList.remove('visible');
+    document.getElementById('r1-result').textContent = '—';
+    document.getElementById('r2-result').textContent = '—';
+    document.getElementById('r3-result').textContent = '—';
+    document.getElementById('r4-result').textContent = '—';
+    document.getElementById('achieve-gain').textContent = '—';
+  }
+
+  // Tab switching
+  document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', function() {
+      const tabName = this.dataset.tab;
+      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById(tabName + '-content').classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
