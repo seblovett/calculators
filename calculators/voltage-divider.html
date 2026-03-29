@@ -16,9 +16,32 @@
       justify-content: center;
       margin-bottom: 1.25rem;
     }
-    .schematic-wrap svg {
-      overflow: visible;
+    .schematic-wrap svg { overflow: visible; }
+
+    .tol-presets { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.4rem; }
+    .tol-btn {
+      padding:.25rem .55rem; border-radius:999px; font-size:.78rem; font-weight:600;
+      border:1px solid var(--border); background:var(--white); cursor:pointer;
+      transition:background .12s, border-color .12s;
     }
+    .tol-btn:hover { background:var(--blue-light); border-color:#93c5fd; }
+    .tol-btn.active { background:#dbeafe; border-color:#3b82f6; color:#1d4ed8; }
+
+    .section-label {
+      font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+      color:var(--text-muted); margin: 1.25rem 0 .6rem;
+    }
+    .result-band {
+      background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius);
+      padding:.75rem 1rem; margin-top:.75rem;
+    }
+    .result-band-title { font-size:.82rem; font-weight:700; color:#475569; margin-bottom:.5rem; }
+    .result-band-row { display:flex; justify-content:space-between; font-size:.88rem; padding:.2rem 0; }
+    .result-band-row .rb-label { color:var(--text-muted); }
+    .result-band-row .rb-value { font-weight:600; color:#1e293b; font-variant-numeric:tabular-nums; }
+    .band-ok  { border-left:3px solid #16a34a; }
+    .band-info{ border-left:3px solid #2563eb; }
+    .band-warn{ border-left:3px solid #ea580c; }
   </style>
 </head>
 <body>
@@ -43,49 +66,31 @@
 
     <!-- Mode tabs -->
     <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
-      <button class="btn btn-primary" id="tab-vout" onclick="showMode('vout')">Find V<sub>out</sub></button>
-      <button class="btn btn-secondary" id="tab-r2" onclick="showMode('r2')">Find R2</button>
+      <button class="btn btn-primary"   id="tab-vout" onclick="showMode('vout')">Find V<sub>out</sub></button>
+      <button class="btn btn-secondary" id="tab-r2"   onclick="showMode('r2')">Find R2</button>
+      <button class="btn btn-secondary" id="tab-adv"  onclick="showMode('adv')">Advanced</button>
     </div>
 
-    <!-- Find Vout -->
+    <!-- ── Find Vout ── -->
     <div class="card" id="mode-vout">
       <h2>Find Output Voltage</h2>
       <div class="schematic-wrap">
         <svg viewBox="0 0 200 268" width="160" xmlns="http://www.w3.org/2000/svg" aria-label="Voltage divider schematic" font-family="system-ui,sans-serif">
-
-          <!-- ── Vin label & wire ── -->
           <text x="80" y="16" text-anchor="middle" font-size="13" font-weight="700" fill="#2563eb">Vin</text>
           <line x1="80" y1="20" x2="80" y2="44" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
-
-          <!-- ── R1: IEC rectangle, portrait (30 × 60) ── -->
           <rect x="65" y="44" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
           <text x="104" y="78" font-size="12" font-weight="600" fill="#1e293b">R1</text>
-
-          <!-- ── Wire R1 bottom → junction node ── -->
           <line x1="80" y1="104" x2="80" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
-
-          <!-- ── Junction node ── -->
           <circle cx="80" cy="130" r="4" fill="#1e293b"/>
-
-          <!-- ── Vout tap wire & label ── -->
           <line x1="80" y1="130" x2="155" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
           <text x="161" y="135" font-size="13" font-weight="700" fill="#2563eb">Vout</text>
-
-          <!-- ── Wire junction → R2 ── -->
           <line x1="80" y1="130" x2="80" y2="152" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
-
-          <!-- ── R2: IEC rectangle, portrait (30 × 60) ── -->
           <rect x="65" y="152" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
           <text x="104" y="186" font-size="12" font-weight="600" fill="#1e293b">R2</text>
-
-          <!-- ── Wire R2 bottom → GND ── -->
           <line x1="80" y1="212" x2="80" y2="228" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
-
-          <!-- ── GND symbol (three tapering bars) ── -->
           <line x1="60" y1="228" x2="100" y2="228" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
           <line x1="66" y1="236" x2="94"  y2="236" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
           <line x1="73" y1="244" x2="87"  y2="244" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
-
         </svg>
       </div>
 
@@ -120,52 +125,32 @@
         <button class="btn btn-primary" onclick="calcVout()">Calculate</button>
         <button class="btn btn-secondary" onclick="clearVout()">Clear</button>
       </div>
-
       <div class="results" id="res-vout">
         <h3>Results</h3>
         <div class="result-grid" id="grid-vout"></div>
       </div>
     </div>
 
-    <!-- Find R2 -->
+    <!-- ── Find R2 ── -->
     <div class="card" id="mode-r2" style="display:none;">
       <h2>Find R2 for a Target Vout</h2>
       <div class="schematic-wrap">
         <svg viewBox="0 0 200 268" width="160" xmlns="http://www.w3.org/2000/svg" aria-label="Voltage divider schematic" font-family="system-ui,sans-serif">
-
-          <!-- ── Vin label & wire ── -->
           <text x="80" y="16" text-anchor="middle" font-size="13" font-weight="700" fill="#2563eb">Vin</text>
           <line x1="80" y1="20" x2="80" y2="44" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
-
-          <!-- ── R1: IEC rectangle, portrait (30 × 60) ── -->
           <rect x="65" y="44" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
           <text x="104" y="78" font-size="12" font-weight="600" fill="#1e293b">R1</text>
-
-          <!-- ── Wire R1 bottom → junction node ── -->
           <line x1="80" y1="104" x2="80" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
-
-          <!-- ── Junction node ── -->
           <circle cx="80" cy="130" r="4" fill="#1e293b"/>
-
-          <!-- ── Vout tap wire & label ── -->
           <line x1="80" y1="130" x2="155" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
           <text x="161" y="135" font-size="13" font-weight="700" fill="#2563eb">Vout</text>
-
-          <!-- ── Wire junction → R2 ── -->
           <line x1="80" y1="130" x2="80" y2="152" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
-
-          <!-- ── R2: IEC rectangle, highlighted as the unknown ── -->
           <rect x="65" y="152" width="30" height="60" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
           <text x="104" y="186" font-size="12" font-weight="600" fill="#2563eb">R2</text>
-
-          <!-- ── Wire R2 bottom → GND ── -->
           <line x1="80" y1="212" x2="80" y2="228" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
-
-          <!-- ── GND symbol (three tapering bars) ── -->
           <line x1="60" y1="228" x2="100" y2="228" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
           <line x1="66" y1="236" x2="94"  y2="236" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
           <line x1="73" y1="244" x2="87"  y2="244" stroke="#1e293b" stroke-width="2"   stroke-linecap="round"/>
-
         </svg>
       </div>
       <div class="formula-block">$$R_2 = R_1 \cdot \dfrac{V_\text{out}}{V_\text{in} - V_\text{out}}$$</div>
@@ -199,10 +184,169 @@
         <button class="btn btn-primary" onclick="calcR2()">Calculate</button>
         <button class="btn btn-secondary" onclick="clearR2()">Clear</button>
       </div>
-
       <div class="results" id="res-r2">
         <h3>Results</h3>
         <div class="result-grid" id="grid-r2"></div>
+      </div>
+    </div>
+
+    <!-- ── Advanced ── -->
+    <div class="card" id="mode-adv" style="display:none;">
+      <h2>Advanced Analysis</h2>
+      <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem;">
+        Models the combined effect of resistor tolerance and a constant-current load on V<sub>out</sub>.
+      </p>
+
+      <!-- Schematic: divider + current sink -->
+      <div class="schematic-wrap">
+        <svg viewBox="0 0 265 290" width="200" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">
+          <defs>
+            <marker id="cs-arrow" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto">
+              <path d="M0,0 L7,3.5 L0,7 Z" fill="#1e293b"/>
+            </marker>
+          </defs>
+
+          <!-- Vin -->
+          <text x="80" y="16" text-anchor="middle" font-size="13" font-weight="700" fill="#2563eb">Vin</text>
+          <line x1="80" y1="20" x2="80" y2="44" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- R1 -->
+          <rect x="65" y="44" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+          <text x="104" y="78" font-size="12" font-weight="600" fill="#1e293b">R1</text>
+
+          <!-- Wire R1 → junction -->
+          <line x1="80" y1="104" x2="80" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- Junction dot -->
+          <circle cx="80" cy="130" r="4" fill="#1e293b"/>
+
+          <!-- Vout label (above horizontal wire) -->
+          <text x="150" y="122" text-anchor="middle" font-size="12" font-weight="700" fill="#2563eb">Vout</text>
+
+          <!-- Horizontal wire: junction → current source branch -->
+          <line x1="80" y1="130" x2="210" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- Wire junction → R2 -->
+          <line x1="80" y1="130" x2="80" y2="152" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- R2 -->
+          <rect x="65" y="152" width="30" height="60" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+          <text x="104" y="186" font-size="12" font-weight="600" fill="#1e293b">R2</text>
+
+          <!-- Wire R2 bottom → bottom bus -->
+          <line x1="80" y1="212" x2="80" y2="256" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- Wire CS top: horizontal → down to circle -->
+          <line x1="210" y1="130" x2="210" y2="148" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- Current source circle -->
+          <circle cx="210" cy="168" r="20" fill="#ffffff" stroke="#1e293b" stroke-width="1.8"/>
+
+          <!-- Arrow inside circle (downward = current sink pulling from Vout node) -->
+          <line x1="210" y1="157" x2="210" y2="174" stroke="#1e293b" stroke-width="2"
+                stroke-linecap="round" marker-end="url(#cs-arrow)"/>
+
+          <!-- IL label -->
+          <text x="235" y="163" font-size="11" fill="#475569">I</text>
+          <text x="242" y="167" font-size="8"  fill="#475569">L</text>
+
+          <!-- Wire CS bottom → bottom bus -->
+          <line x1="210" y1="188" x2="210" y2="256" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- Bottom bus joining both branches -->
+          <line x1="80" y1="256" x2="210" y2="256" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+
+          <!-- GND symbol centred on bus -->
+          <line x1="125" y1="256" x2="165" y2="256" stroke="#1e293b" stroke-width="2.2" stroke-linecap="round"/>
+          <line x1="131" y1="264" x2="159" y2="264" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="138" y1="272" x2="152" y2="272" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <!-- Resistor values -->
+      <div class="section-label">Resistor Values</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="adv-vin">Input Voltage (Vin)</label>
+          <div class="unit-input" data-type="voltage" data-default="1">
+            <input type="number" id="adv-vin" placeholder="e.g. 12" step="any" min="0">
+            <select id="adv-vin-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="adv-r1">R1</label>
+          <div class="unit-input" data-type="resistance" data-default="1">
+            <input type="number" id="adv-r1" placeholder="e.g. 10k" step="any" min="0">
+            <select id="adv-r1-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="adv-r2">R2</label>
+          <div class="unit-input" data-type="resistance" data-default="1">
+            <input type="number" id="adv-r2" placeholder="e.g. 4k7" step="any" min="0">
+            <select id="adv-r2-unit"></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tolerance -->
+      <div class="section-label">Resistor Tolerance</div>
+      <div class="form-group" style="max-width:200px;">
+        <label for="adv-tol">Tolerance</label>
+        <div class="input-wrap">
+          <input type="number" id="adv-tol" value="1" step="any" min="0" max="50" placeholder="e.g. 1">
+          <span class="input-unit">%</span>
+        </div>
+      </div>
+      <div class="tol-presets">
+        <button class="tol-btn" onclick="setTol(0.1)">0.1%</button>
+        <button class="tol-btn" onclick="setTol(0.5)">0.5%</button>
+        <button class="tol-btn active" onclick="setTol(1)">1%</button>
+        <button class="tol-btn" onclick="setTol(2)">2%</button>
+        <button class="tol-btn" onclick="setTol(5)">5%</button>
+        <button class="tol-btn" onclick="setTol(10)">10%</button>
+        <button class="tol-btn" onclick="setTol(20)">20%</button>
+      </div>
+
+      <!-- Load current -->
+      <div class="section-label">Constant Current Load (I<sub>L</sub>)</div>
+      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:.75rem;">
+        Current drawn from V<sub>out</sub> to GND by the load (e.g. a chip in normal operation).
+        Set Min = Nom = Max = 0 to model an unloaded divider.
+      </p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="adv-il-min">I<sub>L</sub> Minimum</label>
+          <div class="unit-input" data-type="current" data-default="1e-3">
+            <input type="number" id="adv-il-min" placeholder="e.g. 0" step="any" min="0" value="0">
+            <select id="adv-il-min-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="adv-il-nom">I<sub>L</sub> Nominal</label>
+          <div class="unit-input" data-type="current" data-default="1e-3">
+            <input type="number" id="adv-il-nom" placeholder="e.g. 10" step="any" min="0">
+            <select id="adv-il-nom-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="adv-il-max">I<sub>L</sub> Maximum</label>
+          <div class="unit-input" data-type="current" data-default="1e-3">
+            <input type="number" id="adv-il-max" placeholder="e.g. 50" step="any" min="0">
+            <select id="adv-il-max-unit"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="error" id="err-adv">⚠ Enter Vin, R1, R2, tolerance, and all three load current values.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcAdv()">Analyse</button>
+        <button class="btn btn-secondary" onclick="clearAdv()">Clear</button>
+      </div>
+
+      <div class="results" id="res-adv">
+        <h3>Analysis Results</h3>
+        <div id="adv-bands"></div>
       </div>
     </div>
 
@@ -210,6 +354,7 @@
 </div>
 
 <script>
+/* ── helpers ── */
 function fmt(n, unit='') {
   if (n === null || isNaN(n)) return '—';
   let s;
@@ -217,60 +362,46 @@ function fmt(n, unit='') {
     if (n >= 1e6) s = (n/1e6).toPrecision(4) + ' MΩ';
     else if (n >= 1e3) s = (n/1e3).toPrecision(4) + ' kΩ';
     else s = parseFloat(n.toPrecision(5)) + ' Ω';
+  } else if (unit === 'V') {
+    if (Math.abs(n) < 1e-3) s = (n*1e6).toPrecision(4) + ' µV';
+    else if (Math.abs(n) < 1)  s = (n*1e3).toPrecision(4) + ' mV';
+    else s = parseFloat(n.toPrecision(5)) + ' V';
+  } else if (unit === 'A') {
+    if (Math.abs(n) < 1e-6) s = (n*1e9).toPrecision(4) + ' nA';
+    else if (Math.abs(n) < 1e-3) s = (n*1e6).toPrecision(4) + ' µA';
+    else if (Math.abs(n) < 1)    s = (n*1e3).toPrecision(4) + ' mA';
+    else s = parseFloat(n.toPrecision(5)) + ' A';
   } else {
     s = parseFloat(n.toPrecision(5)) + (unit ? ' '+unit : '');
   }
   return s;
 }
 
+function pct(n) { return (n >= 0 ? '+' : '') + n.toFixed(2) + '%'; }
+
+/* ── tab switching ── */
 function showMode(mode) {
-  document.getElementById('mode-vout').style.display = mode === 'vout' ? '' : 'none';
-  document.getElementById('mode-r2').style.display  = mode === 'r2'   ? '' : 'none';
-  document.getElementById('tab-vout').className = mode === 'vout' ? 'btn btn-primary' : 'btn btn-secondary';
-  document.getElementById('tab-r2').className   = mode === 'r2'   ? 'btn btn-primary' : 'btn btn-secondary';
+  ['vout','r2','adv'].forEach(m => {
+    document.getElementById('mode-'+m).style.display = m === mode ? '' : 'none';
+    document.getElementById('tab-'+m).className = m === mode ? 'btn btn-primary' : 'btn btn-secondary';
+  });
 }
 
+/* ── Find Vout ── */
 function calcVout() {
-  const vin = unitVal('vin1');
-  const r1  = unitVal('r1a');
-  const r2  = unitVal('r2a');
+  const vin = unitVal('vin1'), r1 = unitVal('r1a'), r2 = unitVal('r2a');
   const err = document.getElementById('err-vout');
   err.classList.remove('visible');
-
   if ([vin,r1,r2].some(isNaN) || r1 <= 0 || r2 <= 0) { err.classList.add('visible'); return; }
-
   const vout = vin * r2 / (r1 + r2);
-  const ratio = vout / vin;
   const current = vin / (r1 + r2);
-  const power = vin * current;
-
   document.getElementById('grid-vout').innerHTML = `
     <div class="result-item"><div class="result-label">V<sub>out</sub></div><div class="result-value">${fmt(vout,'V')}</div></div>
-    <div class="result-item"><div class="result-label">Ratio (Vout/Vin)</div><div class="result-value">${parseFloat(ratio.toPrecision(4))}</div></div>
+    <div class="result-item"><div class="result-label">Ratio (Vout/Vin)</div><div class="result-value">${parseFloat((vout/vin).toPrecision(4))}</div></div>
     <div class="result-item"><div class="result-label">Divider Current</div><div class="result-value">${fmt(current,'A')}</div></div>
-    <div class="result-item"><div class="result-label">Total Power</div><div class="result-value">${fmt(power,'W')}</div></div>
+    <div class="result-item"><div class="result-label">Total Power</div><div class="result-value">${fmt(vin*current,'W')}</div></div>
   `;
   document.getElementById('res-vout').classList.add('visible');
-}
-
-function calcR2() {
-  const vin  = unitVal('vin2');
-  const vout = unitVal('vout2');
-  const r1   = unitVal('r1b');
-  const err  = document.getElementById('err-r2');
-  err.classList.remove('visible');
-
-  if ([vin,vout,r1].some(isNaN) || vout >= vin || vout <= 0 || r1 <= 0) { err.classList.add('visible'); return; }
-
-  const r2 = r1 * vout / (vin - vout);
-  const current = vin / (r1 + r2);
-
-  document.getElementById('grid-r2').innerHTML = `
-    <div class="result-item"><div class="result-label">R2</div><div class="result-value">${fmt(r2,'Ω')}</div></div>
-    <div class="result-item"><div class="result-label">Divider Current</div><div class="result-value">${fmt(current,'A')}</div></div>
-    <div class="result-item"><div class="result-label">Total R</div><div class="result-value">${fmt(r1+r2,'Ω')}</div></div>
-  `;
-  document.getElementById('res-r2').classList.add('visible');
 }
 
 function clearVout() {
@@ -279,10 +410,136 @@ function clearVout() {
   document.getElementById('err-vout').classList.remove('visible');
 }
 
+/* ── Find R2 ── */
+function calcR2() {
+  const vin = unitVal('vin2'), vout = unitVal('vout2'), r1 = unitVal('r1b');
+  const err = document.getElementById('err-r2');
+  err.classList.remove('visible');
+  if ([vin,vout,r1].some(isNaN) || vout >= vin || vout <= 0 || r1 <= 0) { err.classList.add('visible'); return; }
+  const r2 = r1 * vout / (vin - vout);
+  const current = vin / (r1 + r2);
+  document.getElementById('grid-r2').innerHTML = `
+    <div class="result-item"><div class="result-label">R2</div><div class="result-value">${fmt(r2,'Ω')}</div></div>
+    <div class="result-item"><div class="result-label">Divider Current</div><div class="result-value">${fmt(current,'A')}</div></div>
+    <div class="result-item"><div class="result-label">Total R</div><div class="result-value">${fmt(r1+r2,'Ω')}</div></div>
+  `;
+  document.getElementById('res-r2').classList.add('visible');
+}
+
 function clearR2() {
   ['vin2','vout2','r1b'].forEach(id => document.getElementById(id).value='');
   document.getElementById('res-r2').classList.remove('visible');
   document.getElementById('err-r2').classList.remove('visible');
+}
+
+/* ── Advanced ── */
+function setTol(v) {
+  document.getElementById('adv-tol').value = v;
+  document.querySelectorAll('.tol-btn').forEach(b => {
+    b.classList.toggle('active', parseFloat(b.textContent) === v);
+  });
+}
+
+function voutLoaded(vin, r1, r2, il) {
+  /* Vout with a constant-current sink IL on the output.
+     KCL at Vout node: (Vin-Vout)/R1 = Vout/R2 + IL
+     => Vout = (Vin/R1 - IL) / (1/R1 + 1/R2)
+            = Vin·R2/(R1+R2) − IL·R1·R2/(R1+R2)  */
+  return vin * r2 / (r1 + r2) - il * (r1 * r2 / (r1 + r2));
+}
+
+function bandRow(label, value, sub) {
+  return `<div class="result-band-row">
+    <span class="rb-label">${label}</span>
+    <span class="rb-value">${value}${sub ? `<span style="font-size:.78rem;font-weight:400;color:var(--text-muted);margin-left:.4rem;">${sub}</span>` : ''}</span>
+  </div>`;
+}
+
+function calcAdv() {
+  const vin    = unitVal('adv-vin');
+  const r1     = unitVal('adv-r1');
+  const r2     = unitVal('adv-r2');
+  const tolPct = parseFloat(document.getElementById('adv-tol').value);
+  const il_min = unitVal('adv-il-min');
+  const il_nom = unitVal('adv-il-nom');
+  const il_max = unitVal('adv-il-max');
+  const err = document.getElementById('err-adv');
+  err.classList.remove('visible');
+
+  if ([vin,r1,r2,il_min,il_nom,il_max].some(isNaN) ||
+      isNaN(tolPct) || r1 <= 0 || r2 <= 0 || vin <= 0 ||
+      il_min < 0 || il_nom < il_min || il_max < il_nom) {
+    err.classList.add('visible'); return;
+  }
+
+  const tol = tolPct / 100;
+
+  /* Nominal */
+  const rth      = r1 * r2 / (r1 + r2);
+  const vout_nom = vin * r2 / (r1 + r2);
+
+  /* Nominal with load */
+  const vout_nom_loaded = voutLoaded(vin, r1, r2, il_nom);
+
+  /* Tolerance-only band (no load) */
+  const r1_min = r1*(1-tol), r1_max = r1*(1+tol);
+  const r2_min = r2*(1-tol), r2_max = r2*(1+tol);
+  const vout_tol_max = vin * r2_max / (r1_min + r2_max);
+  const vout_tol_min = vin * r2_min / (r1_max + r2_min);
+
+  /* Worst-case combined (tol + load) */
+  // Lowest Vout: R1 high, R2 low, IL high
+  const vout_wc_min = voutLoaded(vin, r1_max, r2_min, il_max);
+  // Highest Vout: R1 low, R2 high, IL low
+  const vout_wc_max = voutLoaded(vin, r1_min, r2_max, il_min);
+
+  /* Percentage deviations from nominal */
+  const tol_span_pct = ((vout_tol_max - vout_tol_min) / vout_nom) * 100;
+  const wc_span_pct  = ((vout_wc_max  - vout_wc_min)  / vout_nom) * 100;
+  const load_droop   = vout_nom - vout_nom_loaded; // voltage droop with nom load
+
+  document.getElementById('adv-bands').innerHTML = `
+
+    <div class="result-band band-info">
+      <div class="result-band-title">Nominal (no load, nominal R)</div>
+      ${bandRow('V<sub>out</sub>', fmt(vout_nom,'V'))}
+      ${bandRow('Thevenin resistance (R1‖R2)', fmt(rth,'Ω'))}
+      ${bandRow('Divider current', fmt(vin/(r1+r2),'A'))}
+    </div>
+
+    <div class="result-band band-ok">
+      <div class="result-band-title">With Load (nominal IL = ${fmt(il_nom,'A')})</div>
+      ${bandRow('V<sub>out</sub>', fmt(vout_nom_loaded,'V'), pct((vout_nom_loaded-vout_nom)/vout_nom*100) + ' vs nominal')}
+      ${bandRow('Load droop', fmt(load_droop,'V'))}
+      ${bandRow('Load regulation', fmt(rth*1000,'') + ' mV/mA', '= R<sub>th</sub>')}
+    </div>
+
+    <div class="result-band band-ok">
+      <div class="result-band-title">Tolerance Band ±${tolPct}% (no load)</div>
+      ${bandRow('V<sub>out</sub> max', fmt(vout_tol_max,'V'), pct((vout_tol_max-vout_nom)/vout_nom*100))}
+      ${bandRow('V<sub>out</sub> nom', fmt(vout_nom,'V'))}
+      ${bandRow('V<sub>out</sub> min', fmt(vout_tol_min,'V'), pct((vout_tol_min-vout_nom)/vout_nom*100))}
+      ${bandRow('Total spread', fmt(vout_tol_max-vout_tol_min,'V'), tol_span_pct.toFixed(2)+'% of nom')}
+    </div>
+
+    <div class="result-band band-warn">
+      <div class="result-band-title">Worst-Case Band (±${tolPct}% tol + IL ${fmt(il_min,'A')}–${fmt(il_max,'A')})</div>
+      ${bandRow('V<sub>out</sub> max', fmt(vout_wc_max,'V'), pct((vout_wc_max-vout_nom)/vout_nom*100) + ' vs nom')}
+      ${bandRow('V<sub>out</sub> min', fmt(vout_wc_min,'V'), pct((vout_wc_min-vout_nom)/vout_nom*100) + ' vs nom')}
+      ${bandRow('Total spread', fmt(vout_wc_max-vout_wc_min,'V'), wc_span_pct.toFixed(2)+'% of nom')}
+    </div>
+  `;
+  document.getElementById('res-adv').classList.add('visible');
+}
+
+function clearAdv() {
+  ['adv-vin','adv-r1','adv-r2','adv-il-min','adv-il-nom','adv-il-max'].forEach(id =>
+    document.getElementById(id).value = '');
+  document.getElementById('adv-tol').value = '1';
+  document.querySelectorAll('.tol-btn').forEach(b =>
+    b.classList.toggle('active', b.textContent === '1%'));
+  document.getElementById('res-adv').classList.remove('visible');
+  document.getElementById('err-adv').classList.remove('visible');
 }
 </script>
 </body>
