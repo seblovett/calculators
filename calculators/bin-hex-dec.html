@@ -165,14 +165,21 @@
 
     <!-- ── Combined visualiser + converter ── -->
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem;">
         <h2 style="margin:0;">Bit Visualiser &amp; Converter</h2>
-        <div class="width-row" style="margin:0;">
-          <span class="width-label">Width:</span>
-          <button class="width-btn" onclick="setWidth(4)"  id="w4">4-bit</button>
-          <button class="width-btn active" onclick="setWidth(8)"  id="w8">8-bit</button>
-          <button class="width-btn" onclick="setWidth(16)" id="w16">16-bit</button>
-          <button class="width-btn" onclick="setWidth(32)" id="w32">32-bit</button>
+        <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;">
+          <div class="width-row" style="margin:0;">
+            <span class="width-label">Width:</span>
+            <button class="width-btn" onclick="setWidth(4)"  id="w4">4-bit</button>
+            <button class="width-btn active" onclick="setWidth(8)"  id="w8">8-bit</button>
+            <button class="width-btn" onclick="setWidth(16)" id="w16">16-bit</button>
+            <button class="width-btn" onclick="setWidth(32)" id="w32">32-bit</button>
+          </div>
+          <div class="width-row" style="margin:0;">
+            <span class="width-label">Mode:</span>
+            <button class="width-btn active" onclick="setMode(false)" id="mode-unsigned">Unsigned</button>
+            <button class="width-btn" onclick="setMode(true)" id="mode-signed">2's Complement</button>
+          </div>
         </div>
       </div>
 
@@ -243,8 +250,9 @@
 /* ═══════════════════════════════════════════════════════
    State
 ═══════════════════════════════════════════════════════ */
-let value = 0;   // unsigned integer
-let bits  = 8;
+let value      = 0;     // always stored as unsigned bit pattern
+let bits       = 8;
+let signedMode = false;
 
 /* Nibble colours: index 0 = LSN (rightmost) */
 const NIBBLE_COLORS = ['#3b82f6','#7c3aed','#0ea5e9','#d97706','#16a34a','#dc2626','#ea580c','#0d9488'];
@@ -262,8 +270,9 @@ function clamp(v) {
 }
 
 function signed(v) {
-  if (v >= (1 << (bits - 1))) return v - (1 << bits);
-  return v;
+  if (bits === 32) return v | 0;   // JS sign-extends 32-bit integers
+  const half = 1 << (bits - 1);
+  return v >= half ? v - (half * 2) : v;
 }
 
 function weightStr(i) {
@@ -274,7 +283,7 @@ function weightStr(i) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   Width selector
+   Width & mode selectors
 ═══════════════════════════════════════════════════════ */
 function setWidth(n) {
   bits = n;
@@ -285,13 +294,30 @@ function setWidth(n) {
   renderBits();
 }
 
+function setMode(isSigned) {
+  signedMode = isSigned;
+  document.getElementById('mode-unsigned').classList.toggle('active', !isSigned);
+  document.getElementById('mode-signed').classList.toggle('active', isSigned);
+  updateAll(null);
+}
+
 /* ═══════════════════════════════════════════════════════
    Input handlers
 ═══════════════════════════════════════════════════════ */
 function fromDec(s) {
   const n = parseInt(s.replace(/\s/g,''), 10);
-  if (isNaN(n) || n < 0) return;
-  value = clamp(n);
+  if (isNaN(n)) return;
+  let raw;
+  if (signedMode) {
+    const max = bits === 32 ? 2147483647  : (1 << (bits - 1)) - 1;
+    const min = bits === 32 ? -2147483648 : -(1 << (bits - 1));
+    if (n < min || n > max) return;
+    raw = n < 0 ? n + (bits === 32 ? 4294967296 : (1 << bits)) : n;
+  } else {
+    if (n < 0) return;
+    raw = n;
+  }
+  value = clamp(raw);
   updateAll('in-dec');
   renderBits();
 }
@@ -323,7 +349,7 @@ function fromOct(s) {
 }
 
 function updateAll(skip) {
-  if (skip !== 'in-dec') document.getElementById('in-dec').value = value;
+  if (skip !== 'in-dec') document.getElementById('in-dec').value = signedMode ? signed(value) : value;
   if (skip !== 'in-hex') document.getElementById('in-hex').value = value.toString(16).toUpperCase();
   if (skip !== 'in-bin') document.getElementById('in-bin').value =
     bits <= 32 ? value.toString(2).padStart(bits, '0') : value.toString(2);
@@ -339,7 +365,6 @@ function toggleBit(pos) {
   value = clamp(value);
   updateAll(null);
   renderBits();
-  updateInterp();
 }
 
 /* ═══════════════════════════════════════════════════════
