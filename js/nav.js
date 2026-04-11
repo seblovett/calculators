@@ -44,6 +44,7 @@ const NAV = [
       { href: 'wire-gauge.html',     title: 'AWG Wire Gauge' },
       { href: 'e-series.html',       title: 'E Series (Preferred Numbers)' },
       { href: 'dbm-converter.html',  title: 'dBm / Watts / Volts' },
+      { href: 'bin-hex-dec.html',    title: 'Binary / Hex / Decimal' },
     ],
   },
 ];

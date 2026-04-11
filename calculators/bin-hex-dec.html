@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Binary / Hex / Decimal Converter — Engineering Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* ── converter inputs ── */
+    .conv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .conv-field { display: flex; flex-direction: column; gap: .3rem; }
+    .conv-label {
+      font-size: .72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--text-muted);
+    }
+    .conv-input-wrap { display: flex; gap: 0; }
+    .conv-input-wrap input {
+      flex: 1; border-radius: var(--radius) 0 0 var(--radius);
+      border: 1.5px solid var(--border); padding: .45rem .65rem;
+      font-size: 1rem; font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+      font-weight: 600; background: var(--white); outline: none;
+      transition: border-color .15s;
+    }
+    .conv-input-wrap input:focus { border-color: #3b82f6; }
+    .copy-btn {
+      padding: .45rem .6rem; border: 1.5px solid var(--border); border-left: none;
+      border-radius: 0 var(--radius) var(--radius) 0; background: var(--bg);
+      cursor: pointer; font-size: .8rem; color: var(--text-muted);
+      transition: background .12s, color .12s;
+    }
+    .copy-btn:hover { background: var(--blue-light); color: #1d4ed8; }
+    .copy-btn.copied { color: #16a34a; }
+
+    .base-badge {
+      display: inline-block; padding: .15rem .45rem; border-radius: 4px;
+      font-size: .7rem; font-weight: 700; margin-left: .4rem;
+      vertical-align: middle;
+    }
+
+    /* ── quick-set buttons ── */
+    .quick-row { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: 1.25rem; }
+    .quick-btn {
+      padding: .28rem .65rem; border-radius: 999px; font-size: .78rem;
+      font-weight: 600; border: 1px solid var(--border);
+      background: var(--white); cursor: pointer; font-family: monospace;
+      transition: background .12s, border-color .12s;
+    }
+    .quick-btn:hover { background: var(--blue-light); border-color: #93c5fd; }
+
+    /* ── width selector ── */
+    .width-row { display: flex; gap: .4rem; margin-bottom: 1.25rem; align-items: center; }
+    .width-label { font-size: .8rem; font-weight: 600; color: var(--text-muted); margin-right: .2rem; }
+    .width-btn {
+      padding: .28rem .65rem; border-radius: 999px; font-size: .8rem; font-weight: 600;
+      border: 1.5px solid var(--border); background: var(--white); cursor: pointer;
+      transition: background .12s, border-color .12s, color .12s;
+    }
+    .width-btn.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+
+    /* ── bit visualizer ── */
+    .bit-scroller { overflow-x: auto; padding-bottom: .5rem; }
+    .bit-row { display: flex; gap: 10px; width: max-content; padding: .25rem 0; }
+
+    .nibble-group { display: flex; flex-direction: column; align-items: center; gap: 0; }
+    .nibble-cells { display: flex; gap: 4px; }
+
+    .bit-cell {
+      width: 44px; height: 62px; border-radius: 6px;
+      border: 1.5px solid #cbd5e1;
+      background: #1e293b;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: space-between;
+      padding: 5px 0 5px;
+      cursor: pointer; user-select: none;
+      transition: background .12s, border-color .12s, transform .07s;
+    }
+    .bit-cell:hover { transform: translateY(-2px); filter: brightness(1.15); }
+    .bit-cell:active { transform: translateY(0); }
+
+    .bit-weight {
+      font-size: .62rem; font-weight: 600; color: #94a3b8;
+      line-height: 1;
+    }
+    .bit-val {
+      font-size: 1.3rem; font-weight: 800; color: #475569;
+      line-height: 1;
+      font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+    }
+    .bit-idx {
+      font-size: .6rem; font-weight: 600; color: #64748b;
+      line-height: 1;
+    }
+
+    /* ON state — colour set by JS inline style */
+    .bit-cell.on .bit-weight { color: rgba(255,255,255,.75); }
+    .bit-cell.on .bit-val    { color: #fff; }
+    .bit-cell.on .bit-idx    { color: rgba(255,255,255,.7); }
+
+    .nibble-tag {
+      margin-top: 5px; font-size: .72rem; font-weight: 700;
+      font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+      letter-spacing: .04em;
+    }
+
+    /* ── interpretations ── */
+    .interp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: .75rem; margin-top: 1rem;
+    }
+    .interp-item {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .6rem .85rem;
+    }
+    .interp-label { font-size: .72rem; font-weight: 700; text-transform: uppercase;
+                    letter-spacing: .05em; color: var(--text-muted); margin-bottom: .2rem; }
+    .interp-value { font-size: 1rem; font-weight: 700; font-family: monospace; color: #1e293b; }
+
+    /* ── 4-bit reference table ── */
+    .nibble-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    .nibble-table thead tr { background: var(--bg); }
+    .nibble-table th {
+      padding: .5rem .75rem; text-align: left; font-size: .72rem;
+      font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+      color: var(--text-muted); border-bottom: 1.5px solid var(--border);
+    }
+    .nibble-table td {
+      padding: .45rem .75rem; border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', 'Fira Mono', monospace; font-weight: 600;
+    }
+    .nibble-table tbody tr { cursor: pointer; transition: background .1s; }
+    .nibble-table tbody tr:hover { background: var(--blue-light); }
+    .nibble-table tbody tr.ref-active { background: #dbeafe; }
+    .nibble-table tbody tr:last-child td { border-bottom: none; }
+
+    /* mini bit cells in reference table */
+    .mini-bits { display: flex; gap: 3px; align-items: center; }
+    .mini-bit {
+      width: 16px; height: 20px; border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .7rem; font-weight: 700; color: #94a3b8;
+      background: #1e293b; border: 1px solid #334155;
+      font-family: monospace;
+    }
+    .mini-bit.on { color: #fff; }
+
+    /* group separator in full-width tables */
+    .nibble-table tbody tr.group-sep td { border-top: 2px solid var(--border); }
+
+    .hex-badge { font-size: .85rem; color: #6d28d9; }
+    .dec-col   { color: #1e293b; }
+    .oct-col   { color: #0369a1; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="../index.html">⚙️ Engineering <span>Tools</span></a>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="ohms-law.html">Electrical</a>
+    <a href="unit-converter.html" class="active">Converters</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <script src="../js/nav.js"></script>
+
+  <main class="main">
+    <div class="page-title">🔢 Base Converter</div>
+    <div class="page-subtitle">Convert between binary, hexadecimal, decimal, and octal — with an interactive bit visualiser.</div>
+
+    <!-- ── Converter inputs ── -->
+    <div class="card">
+      <h2>Convert</h2>
+
+      <div class="conv-grid">
+        <div class="conv-field">
+          <span class="conv-label">Decimal <span class="base-badge" style="background:#dbeafe;color:#1d4ed8">base 10</span></span>
+          <div class="conv-input-wrap">
+            <input type="text" id="in-dec" placeholder="0" oninput="fromDec(this.value)" inputmode="numeric">
+            <button class="copy-btn" onclick="copyField('in-dec',this)" title="Copy">⎘</button>
+          </div>
+        </div>
+        <div class="conv-field">
+          <span class="conv-label">Hexadecimal <span class="base-badge" style="background:#ede9fe;color:#6d28d9">base 16</span></span>
+          <div class="conv-input-wrap">
+            <input type="text" id="in-hex" placeholder="0" oninput="fromHex(this.value)">
+            <button class="copy-btn" onclick="copyField('in-hex',this)" title="Copy">⎘</button>
+          </div>
+        </div>
+        <div class="conv-field">
+          <span class="conv-label">Binary <span class="base-badge" style="background:#dcfce7;color:#15803d">base 2</span></span>
+          <div class="conv-input-wrap">
+            <input type="text" id="in-bin" placeholder="0" oninput="fromBin(this.value)">
+            <button class="copy-btn" onclick="copyField('in-bin',this)" title="Copy">⎘</button>
+          </div>
+        </div>
+        <div class="conv-field">
+          <span class="conv-label">Octal <span class="base-badge" style="background:#fef3c7;color:#b45309">base 8</span></span>
+          <div class="conv-input-wrap">
+            <input type="text" id="in-oct" placeholder="0" oninput="fromOct(this.value)">
+            <button class="copy-btn" onclick="copyField('in-oct',this)" title="Copy">⎘</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick-set patterns -->
+      <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:.4rem;">Quick set</div>
+      <div class="quick-row" id="quick-row">
+        <!-- filled by JS based on bit width -->
+      </div>
+    </div>
+
+    <!-- ── Bit Visualiser ── -->
+    <div class="card">
+      <h2>Bit Visualiser</h2>
+      <p style="font-size:.83rem;color:var(--text-muted);margin-bottom:1rem;">Click any bit to toggle it. Bits are grouped into nibbles (4 bits) with distinct colours.</p>
+
+      <div class="width-row">
+        <span class="width-label">Width:</span>
+        <button class="width-btn" onclick="setWidth(4)"  id="w4">4-bit</button>
+        <button class="width-btn active" onclick="setWidth(8)"  id="w8">8-bit</button>
+        <button class="width-btn" onclick="setWidth(16)" id="w16">16-bit</button>
+        <button class="width-btn" onclick="setWidth(32)" id="w32">32-bit</button>
+      </div>
+
+      <div class="bit-scroller">
+        <div id="bit-container"></div>
+      </div>
+
+      <!-- Interpretations -->
+      <div class="interp-grid" id="interp-grid"></div>
+    </div>
+
+    <!-- ── 4-bit Reference Table ── -->
+    <div class="card">
+      <h2>4-Bit Nibble Reference</h2>
+      <p style="font-size:.83rem;color:var(--text-muted);margin-bottom:1rem;">
+        All 16 nibble values. Click any row to load that value into the converter.
+      </p>
+      <div style="overflow-x:auto;">
+        <table class="nibble-table" id="ref-table">
+          <thead>
+            <tr>
+              <th>Dec</th>
+              <th>Hex</th>
+              <th>Binary <span style="font-weight:400;opacity:.6">(b3 b2 b1 b0)</span></th>
+              <th>Octal</th>
+            </tr>
+          </thead>
+          <tbody id="ref-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   State
+═══════════════════════════════════════════════════════ */
+let value = 0;   // unsigned integer
+let bits  = 8;
+
+/* Nibble colours: index 0 = LSN (rightmost) */
+const NIBBLE_COLORS = ['#3b82f6','#7c3aed','#0ea5e9','#d97706','#16a34a','#dc2626','#ea580c','#0d9488'];
+
+/* ═══════════════════════════════════════════════════════
+   Masks & helpers
+═══════════════════════════════════════════════════════ */
+function mask() {
+  if (bits === 32) return 0xFFFFFFFF;
+  return (1 << bits) - 1;
+}
+
+function clamp(v) {
+  return (v >>> 0) & mask();
+}
+
+function signed(v) {
+  if (v >= (1 << (bits - 1))) return v - (1 << bits);
+  return v;
+}
+
+function weightStr(i) {
+  const w = 1 << i;
+  if (w >= 1000000) return (w/1000000)+'M';
+  if (w >= 1000)    return (w/1000)+'k';
+  return String(w);
+}
+
+/* ═══════════════════════════════════════════════════════
+   Width selector
+═══════════════════════════════════════════════════════ */
+function setWidth(n) {
+  bits = n;
+  value = clamp(value);
+  ['4','8','16','32'].forEach(w =>
+    document.getElementById('w'+w).classList.toggle('active', String(n) === w));
+  updateAll(null);
+  renderBits();
+  updateInterp();
+  buildQuickSet();
+}
+
+/* ═══════════════════════════════════════════════════════
+   Input handlers
+═══════════════════════════════════════════════════════ */
+function fromDec(s) {
+  const n = parseInt(s.replace(/\s/g,''), 10);
+  if (isNaN(n) || n < 0) return;
+  value = clamp(n);
+  updateAll('in-dec');
+  renderBits(); updateInterp();
+}
+
+function fromHex(s) {
+  const n = parseInt(s.replace(/[^0-9a-fA-F]/g,''), 16);
+  if (isNaN(n)) return;
+  value = clamp(n);
+  updateAll('in-hex');
+  renderBits(); updateInterp();
+}
+
+function fromBin(s) {
+  const clean = s.replace(/[^01\s]/g,'').replace(/\s/g,'');
+  if (!clean) return;
+  const n = parseInt(clean, 2);
+  if (isNaN(n)) return;
+  value = clamp(n);
+  updateAll('in-bin');
+  renderBits(); updateInterp();
+}
+
+function fromOct(s) {
+  const n = parseInt(s.replace(/[^0-7]/g,''), 8);
+  if (isNaN(n)) return;
+  value = clamp(n);
+  updateAll('in-oct');
+  renderBits(); updateInterp();
+}
+
+function updateAll(skip) {
+  if (skip !== 'in-dec') document.getElementById('in-dec').value = value;
+  if (skip !== 'in-hex') document.getElementById('in-hex').value = value.toString(16).toUpperCase();
+  if (skip !== 'in-bin') document.getElementById('in-bin').value =
+    bits <= 32 ? value.toString(2).padStart(bits, '0') : value.toString(2);
+  if (skip !== 'in-oct') document.getElementById('in-oct').value = value.toString(8);
+  highlightRefRow();
+}
+
+/* ═══════════════════════════════════════════════════════
+   Bit toggle
+═══════════════════════════════════════════════════════ */
+function toggleBit(pos) {
+  value ^= (1 << pos);
+  value = clamp(value);
+  updateAll(null);
+  renderBits();
+  updateInterp();
+}
+
+/* ═══════════════════════════════════════════════════════
+   Bit visualiser
+═══════════════════════════════════════════════════════ */
+function renderBits() {
+  const container = document.getElementById('bit-container');
+  const nibbleCount = bits / 4;
+  let groups = [];
+
+  /* Iterate nibbles from MSN → LSN (left → right) */
+  for (let n = nibbleCount - 1; n >= 0; n--) {
+    const color  = NIBBLE_COLORS[n % NIBBLE_COLORS.length];
+    const nibVal = (value >>> (n * 4)) & 0xF;
+
+    let cells = '';
+    /* Bits within nibble from high → low */
+    for (let b = 3; b >= 0; b--) {
+      const bitPos = n * 4 + b;
+      if (bitPos >= bits) continue;
+      const on = (value >>> bitPos) & 1;
+      cells += `<div class="bit-cell${on ? ' on' : ''}"
+          style="${on ? `background:${color};border-color:${color}` : ''}"
+          onclick="toggleBit(${bitPos})"
+          title="Bit ${bitPos} — weight ${1 << bitPos}">
+        <div class="bit-weight">${weightStr(bitPos)}</div>
+        <div class="bit-val">${on}</div>
+        <div class="bit-idx">b${bitPos}</div>
+      </div>`;
+    }
+
+    groups.push(`<div class="nibble-group">
+      <div class="nibble-cells">${cells}</div>
+      <div class="nibble-tag" style="color:${color}">
+        ${nibVal.toString(16).toUpperCase()}<span style="font-size:.62rem;font-weight:400;color:#94a3b8;margin-left:3px">hex</span>
+      </div>
+    </div>`);
+  }
+
+  container.innerHTML = `<div class="bit-row">${groups.join('')}</div>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Interpretations panel
+═══════════════════════════════════════════════════════ */
+function updateInterp() {
+  const sv = bits <= 32 ? signed(value) : value;
+  const items = [
+    ['Unsigned decimal',  value.toString(10)],
+    ['Signed (2\'s comp)', sv.toString(10)],
+    ['Hexadecimal',       '0x' + value.toString(16).toUpperCase().padStart(bits / 4, '0')],
+    ['Octal',             '0o' + value.toString(8)],
+    ['Binary',            value.toString(2).padStart(bits,'0')],
+    ['Bit count',         bits + '-bit'],
+    ['Set bits (ones)',   value.toString(2).split('').filter(b=>b==='1').length.toString()],
+    ['Zero bits',         value.toString(2).padStart(bits,'0').split('').filter(b=>b==='0').length.toString()],
+  ];
+  document.getElementById('interp-grid').innerHTML = items.map(([l,v]) => `
+    <div class="interp-item">
+      <div class="interp-label">${l}</div>
+      <div class="interp-value">${v}</div>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   Quick-set buttons
+═══════════════════════════════════════════════════════ */
+function buildQuickSet() {
+  const m = mask();
+  const nibbles = bits / 4;
+  const patterns = [
+    ['0 (all zeros)',   0],
+    ['All ones',        m],
+    ['0x55 (01…)',      0x55555555 & m],
+    ['0xAA (10…)',      0xAAAAAAAA & m],
+    ['MSB only',        1 << (bits - 1)],
+    ['LSB only',        1],
+  ];
+  // Add nibble-by-nibble patterns for widths > 4
+  if (nibbles > 1) {
+    for (let n = 0; n < nibbles; n++) {
+      patterns.push([`Nibble ${n} = F`, (0xF << (n*4)) & m]);
+    }
+  }
+  document.getElementById('quick-row').innerHTML = patterns.map(([label, v]) =>
+    `<button class="quick-btn" onclick="setValue(${v >>> 0})">${label}</button>`
+  ).join('');
+}
+
+function setValue(v) {
+  value = clamp(v >>> 0);
+  updateAll(null);
+  renderBits();
+  updateInterp();
+}
+
+/* ═══════════════════════════════════════════════════════
+   4-bit reference table
+═══════════════════════════════════════════════════════ */
+function buildRefTable() {
+  let html = '';
+  for (let d = 0; d < 16; d++) {
+    const h = d.toString(16).toUpperCase();
+    const o = d.toString(8);
+    const sep = (d === 8) ? ' group-sep' : '';
+
+    /* Mini bit cells */
+    let miniBits = '';
+    for (let b = 3; b >= 0; b--) {
+      const on = (d >> b) & 1;
+      const color = NIBBLE_COLORS[0];
+      miniBits += `<div class="mini-bit${on ? ' on' : ''}"
+          style="${on ? `background:${color};border-color:${color}` : ''}">
+        ${on}
+      </div>`;
+    }
+
+    html += `<tr class="${sep}" onclick="setValue(${d})" id="ref-row-${d}">
+      <td class="dec-col">${d}</td>
+      <td class="hex-badge">${h}</td>
+      <td><div class="mini-bits">${miniBits}</div></td>
+      <td class="oct-col">${o}</td>
+    </tr>`;
+  }
+  document.getElementById('ref-body').innerHTML = html;
+}
+
+function highlightRefRow() {
+  document.querySelectorAll('#ref-body tr').forEach(tr => tr.classList.remove('ref-active'));
+  if (value <= 15) {
+    const row = document.getElementById('ref-row-' + value);
+    if (row) row.classList.add('ref-active');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Copy helper
+═══════════════════════════════════════════════════════ */
+function copyField(id, btn) {
+  navigator.clipboard.writeText(document.getElementById(id).value).then(() => {
+    btn.classList.add('copied');
+    btn.textContent = '✓';
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '⎘'; }, 1400);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   Init
+═══════════════════════════════════════════════════════ */
+buildRefTable();
+buildQuickSet();
+renderBits();
+updateAll(null);
+updateInterp();
+</script>
+</body>
+</html>
