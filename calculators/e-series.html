@@ -34,6 +34,10 @@
       padding:.65rem 1rem; font-size:1rem; font-weight:700; margin-top:.5rem; display:none;
     }
     .nearest-result.visible { display:block; }
+    .mantissa-hint {
+      font-size:.72rem; color:var(--text-muted); font-weight:400;
+      margin-left:.35rem;
+    }
     .decade-label {
       font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em;
       color:var(--text-muted); margin-top:.75rem; margin-bottom:.25rem;
@@ -80,6 +84,33 @@
         </div>
       </div>
       <div class="nearest-result" id="nearest-result"></div>
+    </div>
+
+    <!-- Ratio solver -->
+    <div class="card">
+      <h2>Ratio Solver</h2>
+      <p style="font-size:.83rem;color:var(--text-muted);margin-bottom:1rem;">
+        Find the best pair of E-series resistors to achieve a target ratio R₁/R₂.
+        Any decade scaling gives the same ratio — values are shown with R₂ ≈ 10 kΩ.
+      </p>
+      <div class="find-nearest">
+        <div class="form-group" style="margin:0;">
+          <label for="ratio-target">Target ratio (R₁ / R₂)</label>
+          <input type="number" id="ratio-target" placeholder="e.g. 0.42" step="any" min="0.0001" oninput="solveRatio()">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label for="ratio-series">Series</label>
+          <select id="ratio-series" onchange="solveRatio()">
+            <option>E6</option>
+            <option>E12</option>
+            <option value="E24" selected>E24</option>
+            <option>E48</option>
+            <option>E96</option>
+            <option>E192</option>
+          </select>
+        </div>
+      </div>
+      <div id="ratio-results"></div>
     </div>
 
     <!-- Series display -->
@@ -273,6 +304,85 @@ function findNearest() {
   } else {
     renderSeries(nearestValue);
   }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Ratio solver
+═══════════════════════════════════════════════════════ */
+function solveRatio() {
+  const targetStr = document.getElementById('ratio-target').value;
+  const container = document.getElementById('ratio-results');
+  if (!targetStr) { container.innerHTML = ''; return; }
+  const target = parseFloat(targetStr);
+  if (isNaN(target) || target <= 0) { container.innerHTML = ''; return; }
+
+  const series = document.getElementById('ratio-series').value;
+  const vals   = SERIES[series];
+
+  // Decompose: target = M × 10^k where M ∈ [1, 10)
+  // This lets us search same-decade mantissa pairs (a/b) for any target magnitude.
+  const k = Math.floor(Math.log10(target));
+  const M = target / Math.pow(10, k);
+
+  // Score every (R1-mantissa, R2-mantissa) pair
+  const candidates = [];
+  for (const a of vals) {
+    for (const b of vals) {
+      const ratio  = a / b;           // mantissa ratio
+      const errPct = Math.abs(ratio - M) / M * 100;
+      candidates.push({ a, b, actualRatio: ratio * Math.pow(10, k), errPct });
+    }
+  }
+  candidates.sort((x, y) => x.errPct - y.errPct);
+
+  // Keep top 5 unique (a, b) pairs
+  const seen = new Set();
+  const top  = [];
+  for (const c of candidates) {
+    const key = `${c.a}/${c.b}`;
+    if (!seen.has(key)) { seen.add(key); top.push(c); }
+    if (top.length >= 5) break;
+  }
+
+  // Scale display so R2 ≈ 10 kΩ; R1 decade shifts by k
+  function scaledPair(a, b) {
+    const exp2    = Math.round(4 - Math.log10(b));        // b × 10^exp2 ≈ 10 kΩ
+    const safeExp = Math.max(-2, Math.min(7, exp2));
+    const r2 = parseFloat((b * Math.pow(10, safeExp)).toPrecision(3));
+    const r1 = parseFloat((a * Math.pow(10, safeExp + k)).toPrecision(3));
+    return { r1, r2 };
+  }
+
+  let html = `<table class="data-table" style="margin-top:.75rem;">
+    <thead><tr>
+      <th style="width:2rem">#</th>
+      <th>R1</th>
+      <th>R2</th>
+      <th>Actual ratio</th>
+      <th>Error</th>
+    </tr></thead><tbody>`;
+
+  top.forEach(({ a, b, actualRatio, errPct }, i) => {
+    const { r1, r2 } = scaledPair(a, b);
+    const errStr = errPct < 0.001
+      ? '<span style="color:#15803d;font-weight:700">exact</span>'
+      : errPct.toFixed(3) + '%';
+    const rowStyle = i === 0 ? ' style="background:#f0fdf4;"' : '';
+    html += `<tr${rowStyle}>
+      <td style="color:var(--text-muted);font-weight:600">${i + 1}</td>
+      <td><strong>${fmtVal(r1)} Ω</strong><span class="mantissa-hint">${a}</span></td>
+      <td><strong>${fmtVal(r2)} Ω</strong><span class="mantissa-hint">${b}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:600">${actualRatio.toPrecision(4)}</td>
+      <td>${errStr}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>
+    <div style="font-size:.76rem;color:var(--text-muted);margin-top:.5rem;">
+      E-series mantissa shown in brackets. Multiply both by the same decade for any equivalent pair.
+    </div>`;
+
+  container.innerHTML = html;
 }
 
 buildTabs();
