@@ -42,16 +42,6 @@
       vertical-align: middle;
     }
 
-    /* ── quick-set buttons ── */
-    .quick-row { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: 1.25rem; }
-    .quick-btn {
-      padding: .28rem .65rem; border-radius: 999px; font-size: .78rem;
-      font-weight: 600; border: 1px solid var(--border);
-      background: var(--white); cursor: pointer; font-family: monospace;
-      transition: background .12s, border-color .12s;
-    }
-    .quick-btn:hover { background: var(--blue-light); border-color: #93c5fd; }
-
     /* ── width selector ── */
     .width-row { display: flex; gap: .4rem; margin-bottom: 1.25rem; align-items: center; }
     .width-label { font-size: .8rem; font-weight: 600; color: var(--text-muted); margin-right: .2rem; }
@@ -116,20 +106,6 @@
       font-family: 'JetBrains Mono', 'Fira Mono', monospace;
       letter-spacing: .04em;
     }
-
-    /* ── interpretations ── */
-    .interp-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: .75rem; margin-top: 1rem;
-    }
-    .interp-item {
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: .6rem .85rem;
-    }
-    .interp-label { font-size: .72rem; font-weight: 700; text-transform: uppercase;
-                    letter-spacing: .05em; color: var(--text-muted); margin-bottom: .2rem; }
-    .interp-value { font-size: 1rem; font-weight: 700; font-family: monospace; color: #1e293b; }
 
     /* ── 4-bit reference table ── */
     .nibble-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
@@ -236,12 +212,6 @@
         </div>
       </div>
 
-      <!-- Quick-set patterns -->
-      <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin:.9rem 0 .4rem;">Quick set</div>
-      <div class="quick-row" id="quick-row"></div>
-
-      <!-- Interpretations -->
-      <div class="interp-grid" id="interp-grid"></div>
     </div>
 
     <!-- ── 4-bit Reference Table ── -->
@@ -312,8 +282,6 @@ function setWidth(n) {
     document.getElementById('w'+w).classList.toggle('active', String(n) === w));
   updateAll(null);
   renderBits();
-  updateInterp();
-  buildQuickSet();
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -324,7 +292,7 @@ function fromDec(s) {
   if (isNaN(n) || n < 0) return;
   value = clamp(n);
   updateAll('in-dec');
-  renderBits(); updateInterp();
+  renderBits();
 }
 
 function fromHex(s) {
@@ -332,7 +300,7 @@ function fromHex(s) {
   if (isNaN(n)) return;
   value = clamp(n);
   updateAll('in-hex');
-  renderBits(); updateInterp();
+  renderBits();
 }
 
 function fromBin(s) {
@@ -342,7 +310,7 @@ function fromBin(s) {
   if (isNaN(n)) return;
   value = clamp(n);
   updateAll('in-bin');
-  renderBits(); updateInterp();
+  renderBits();
 }
 
 function fromOct(s) {
@@ -350,7 +318,7 @@ function fromOct(s) {
   if (isNaN(n)) return;
   value = clamp(n);
   updateAll('in-oct');
-  renderBits(); updateInterp();
+  renderBits();
 }
 
 function updateAll(skip) {
@@ -430,62 +398,14 @@ function renderBits() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   Interpretations panel
+   4-bit reference table
 ═══════════════════════════════════════════════════════ */
-function updateInterp() {
-  const sv = bits <= 32 ? signed(value) : value;
-  const items = [
-    ['Unsigned decimal',  value.toString(10)],
-    ['Signed (2\'s comp)', sv.toString(10)],
-    ['Hexadecimal',       '0x' + value.toString(16).toUpperCase().padStart(bits / 4, '0')],
-    ['Octal',             '0o' + value.toString(8)],
-    ['Binary',            value.toString(2).padStart(bits,'0')],
-    ['Bit count',         bits + '-bit'],
-    ['Set bits (ones)',   value.toString(2).split('').filter(b=>b==='1').length.toString()],
-    ['Zero bits',         value.toString(2).padStart(bits,'0').split('').filter(b=>b==='0').length.toString()],
-  ];
-  document.getElementById('interp-grid').innerHTML = items.map(([l,v]) => `
-    <div class="interp-item">
-      <div class="interp-label">${l}</div>
-      <div class="interp-value">${v}</div>
-    </div>`).join('');
-}
-
-/* ═══════════════════════════════════════════════════════
-   Quick-set buttons
-═══════════════════════════════════════════════════════ */
-function buildQuickSet() {
-  const m = mask();
-  const nibbles = bits / 4;
-  const patterns = [
-    ['0 (all zeros)',   0],
-    ['All ones',        m],
-    ['0x55 (01…)',      0x55555555 & m],
-    ['0xAA (10…)',      0xAAAAAAAA & m],
-    ['MSB only',        1 << (bits - 1)],
-    ['LSB only',        1],
-  ];
-  // Add nibble-by-nibble patterns for widths > 4
-  if (nibbles > 1) {
-    for (let n = 0; n < nibbles; n++) {
-      patterns.push([`Nibble ${n} = F`, (0xF << (n*4)) & m]);
-    }
-  }
-  document.getElementById('quick-row').innerHTML = patterns.map(([label, v]) =>
-    `<button class="quick-btn" onclick="setValue(${v >>> 0})">${label}</button>`
-  ).join('');
-}
-
 function setValue(v) {
   value = clamp(v >>> 0);
   updateAll(null);
   renderBits();
-  updateInterp();
 }
 
-/* ═══════════════════════════════════════════════════════
-   4-bit reference table
-═══════════════════════════════════════════════════════ */
 function buildRefTable() {
   let html = '';
   for (let d = 0; d < 16; d++) {
@@ -493,7 +413,6 @@ function buildRefTable() {
     const o = d.toString(8);
     const sep = (d === 8) ? ' group-sep' : '';
 
-    /* Mini bit cells */
     let miniBits = '';
     for (let b = 3; b >= 0; b--) {
       const on = (d >> b) & 1;
@@ -537,10 +456,8 @@ function copyField(id, btn) {
    Init
 ═══════════════════════════════════════════════════════ */
 buildRefTable();
-buildQuickSet();
 renderBits();
 updateAll(null);
-updateInterp();
 </script>
 </body>
 </html>
