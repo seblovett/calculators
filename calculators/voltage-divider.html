@@ -42,6 +42,20 @@
     .band-ok  { border-left:3px solid #16a34a; }
     .band-info{ border-left:3px solid #2563eb; }
     .band-warn{ border-left:3px solid #ea580c; }
+
+    .slv-hint {
+      font-size:.72rem; color:var(--text-muted); font-weight:400; margin-left:.3rem;
+    }
+    .slv-series-wrap {
+      display:flex; flex-direction:column; gap:.3rem;
+    }
+    .slv-series-wrap label {
+      font-size:.82rem; font-weight:600; color:#374151;
+    }
+    .slv-series-wrap select {
+      height:38px; border:1.5px solid var(--border); border-radius:var(--radius);
+      padding:0 .65rem; font-size:.95rem; background:var(--white);
+    }
   </style>
 </head>
 <body>
@@ -67,8 +81,9 @@
     <!-- Mode tabs -->
     <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
       <button class="btn btn-primary"   id="tab-vout" onclick="showMode('vout')">Find V<sub>out</sub></button>
-      <button class="btn btn-secondary" id="tab-r2"   onclick="showMode('r2')">Find R2</button>
-      <button class="btn btn-secondary" id="tab-adv"  onclick="showMode('adv')">Advanced</button>
+      <button class="btn btn-secondary" id="tab-r2"     onclick="showMode('r2')">Find R2</button>
+      <button class="btn btn-secondary" id="tab-solver" onclick="showMode('solver')">Find R1 &amp; R2</button>
+      <button class="btn btn-secondary" id="tab-adv"   onclick="showMode('adv')">Advanced</button>
     </div>
 
     <!-- ── Find Vout ── -->
@@ -187,6 +202,74 @@
       <div class="results" id="res-r2">
         <h3>Results</h3>
         <div class="result-grid" id="grid-r2"></div>
+      </div>
+    </div>
+
+    <!-- ── Find R1 & R2 ── -->
+    <div class="card" id="mode-solver" style="display:none;">
+      <h2>Find R1 &amp; R2 from E-Series</h2>
+      <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem;">
+        Searches all pairs in the chosen E-series for the combination that best achieves your target V<sub>out</sub>.
+        The divider ratio R₂/(R₁+R₂) is scale-invariant — any decade multiple of the pair gives the same output.
+        Values are shown with R₂ ≈ 10 kΩ as a reference.
+      </p>
+
+      <div class="schematic-wrap">
+        <svg viewBox="0 0 200 268" width="160" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">
+          <text x="80" y="16" text-anchor="middle" font-size="13" font-weight="700" fill="#2563eb">Vin</text>
+          <line x1="80" y1="20" x2="80" y2="44" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <rect x="65" y="44" width="30" height="60" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+          <text x="104" y="78" font-size="12" font-weight="600" fill="#2563eb">R1</text>
+          <line x1="80" y1="104" x2="80" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <circle cx="80" cy="130" r="4" fill="#1e293b"/>
+          <line x1="80" y1="130" x2="155" y2="130" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <text x="161" y="135" font-size="13" font-weight="700" fill="#2563eb">Vout</text>
+          <line x1="80" y1="130" x2="80" y2="152" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <rect x="65" y="152" width="30" height="60" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+          <text x="104" y="186" font-size="12" font-weight="600" fill="#2563eb">R2</text>
+          <line x1="80" y1="212" x2="80" y2="228" stroke="#1e293b" stroke-width="1.8" stroke-linecap="square"/>
+          <line x1="60" y1="228" x2="100" y2="228" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+          <line x1="66" y1="236" x2="94"  y2="236" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+          <line x1="73" y1="244" x2="87"  y2="244" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="slv-vin">Input Voltage (Vin)</label>
+          <div class="unit-input" data-type="voltage" data-default="1">
+            <input type="number" id="slv-vin" placeholder="e.g. 12" step="any" min="0">
+            <select id="slv-vin-unit"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="slv-vout">Target Vout</label>
+          <div class="unit-input" data-type="voltage" data-default="1">
+            <input type="number" id="slv-vout" placeholder="e.g. 3.3" step="any" min="0">
+            <select id="slv-vout-unit"></select>
+          </div>
+        </div>
+        <div class="form-group slv-series-wrap">
+          <label for="slv-series">E-Series</label>
+          <select id="slv-series">
+            <option>E6</option>
+            <option>E12</option>
+            <option value="E24" selected>E24</option>
+            <option>E48</option>
+            <option>E96</option>
+            <option>E192</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="error" id="err-solver">⚠ Vout must be greater than 0 and less than Vin.</div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="calcSolver()">Find Best Pair</button>
+        <button class="btn btn-secondary" onclick="clearSolver()">Clear</button>
+      </div>
+      <div class="results" id="res-solver">
+        <h3>Top Results</h3>
+        <div id="solver-results"></div>
       </div>
     </div>
 
@@ -381,7 +464,7 @@ function pct(n) { return (n >= 0 ? '+' : '') + n.toFixed(2) + '%'; }
 
 /* ── tab switching ── */
 function showMode(mode) {
-  ['vout','r2','adv'].forEach(m => {
+  ['vout','r2','solver','adv'].forEach(m => {
     document.getElementById('mode-'+m).style.display = m === mode ? '' : 'none';
     document.getElementById('tab-'+m).className = m === mode ? 'btn btn-primary' : 'btn btn-secondary';
   });
@@ -530,6 +613,128 @@ function calcAdv() {
     </div>
   `;
   document.getElementById('res-adv').classList.add('visible');
+}
+
+/* ── Find R1 & R2 solver ── */
+const ESERIES = {
+  E6:  [1.0, 1.5, 2.2, 3.3, 4.7, 6.8],
+  E12: [1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2],
+  E24: [1.0,1.1,1.2,1.3,1.5,1.6,1.8,2.0,2.2,2.4,2.7,3.0,
+        3.3,3.6,3.9,4.3,4.7,5.1,5.6,6.2,6.8,7.5,8.2,9.1],
+  E48: [1.00,1.05,1.10,1.15,1.21,1.27,1.33,1.40,1.47,1.54,1.62,1.69,
+        1.78,1.87,1.96,2.05,2.15,2.26,2.37,2.49,2.61,2.74,2.87,3.01,
+        3.16,3.32,3.48,3.65,3.83,4.02,4.22,4.42,4.64,4.87,5.11,5.36,
+        5.62,5.90,6.19,6.49,6.81,7.15,7.50,7.87,8.25,8.66,9.09,9.53],
+  E96: [1.00,1.02,1.05,1.07,1.10,1.13,1.15,1.18,1.21,1.24,1.27,1.30,
+        1.33,1.37,1.40,1.43,1.47,1.50,1.54,1.58,1.62,1.65,1.69,1.74,
+        1.78,1.82,1.87,1.91,1.96,2.00,2.05,2.10,2.15,2.21,2.26,2.32,
+        2.37,2.43,2.49,2.55,2.61,2.67,2.74,2.80,2.87,2.94,3.01,3.09,
+        3.16,3.24,3.32,3.40,3.48,3.57,3.65,3.74,3.83,3.92,4.02,4.12,
+        4.22,4.32,4.42,4.53,4.64,4.75,4.87,4.99,5.11,5.23,5.36,5.49,
+        5.62,5.76,5.90,6.04,6.19,6.34,6.49,6.65,6.81,6.98,7.15,7.32,
+        7.50,7.68,7.87,8.06,8.25,8.45,8.66,8.87,9.09,9.31,9.53,9.76],
+  E192:[1.00,1.01,1.02,1.04,1.05,1.06,1.07,1.09,1.10,1.11,1.13,1.14,
+        1.15,1.17,1.18,1.20,1.21,1.23,1.24,1.26,1.27,1.29,1.30,1.32,
+        1.33,1.35,1.37,1.38,1.40,1.42,1.43,1.45,1.47,1.49,1.50,1.52,
+        1.54,1.56,1.58,1.60,1.62,1.64,1.65,1.67,1.69,1.72,1.74,1.76,
+        1.78,1.80,1.82,1.84,1.87,1.89,1.91,1.93,1.96,1.98,2.00,2.03,
+        2.05,2.08,2.10,2.13,2.15,2.18,2.21,2.23,2.26,2.29,2.32,2.34,
+        2.37,2.40,2.43,2.46,2.49,2.52,2.55,2.58,2.61,2.64,2.67,2.71,
+        2.74,2.77,2.80,2.84,2.87,2.91,2.94,2.98,3.01,3.05,3.09,3.12,
+        3.16,3.20,3.24,3.28,3.32,3.36,3.40,3.44,3.48,3.52,3.57,3.61,
+        3.65,3.70,3.74,3.79,3.83,3.88,3.92,3.97,4.02,4.07,4.12,4.17,
+        4.22,4.27,4.32,4.37,4.42,4.48,4.53,4.59,4.64,4.70,4.75,4.81,
+        4.87,4.93,4.99,5.05,5.11,5.17,5.23,5.30,5.36,5.42,5.49,5.56,
+        5.62,5.69,5.76,5.83,5.90,5.97,6.04,6.12,6.19,6.26,6.34,6.42,
+        6.49,6.57,6.65,6.73,6.81,6.90,6.98,7.06,7.15,7.23,7.32,7.41,
+        7.50,7.59,7.68,7.77,7.87,7.96,8.06,8.16,8.25,8.35,8.45,8.56,
+        8.66,8.76,8.87,8.98,9.09,9.20,9.31,9.42,9.53,9.65,9.76,9.88],
+};
+
+function calcSolver() {
+  const vin  = unitVal('slv-vin');
+  const vout = unitVal('slv-vout');
+  const err  = document.getElementById('err-solver');
+  const res  = document.getElementById('res-solver');
+  err.classList.remove('visible');
+  res.classList.remove('visible');
+
+  if (isNaN(vin) || isNaN(vout) || vin <= 0) return;
+  if (vout <= 0 || vout >= vin) { err.classList.add('visible'); return; }
+
+  const series = document.getElementById('slv-series').value;
+  const vals   = ESERIES[series];
+  const target = vout / vin;   // target R2 / (R1 + R2) — scale-invariant
+
+  // Score every (r1_mantissa, r2_mantissa) pair
+  const candidates = [];
+  for (const r1m of vals) {
+    for (const r2m of vals) {
+      const ratio  = r2m / (r1m + r2m);
+      const errPct = Math.abs(ratio - target) / target * 100;
+      candidates.push({ r1m, r2m, ratio, errPct });
+    }
+  }
+  candidates.sort((a, b) => a.errPct - b.errPct);
+
+  // Top 5 unique (r1m, r2m) pairs
+  const seen = new Set();
+  const top  = [];
+  for (const c of candidates) {
+    const key = `${c.r1m}/${c.r2m}`;
+    if (!seen.has(key)) { seen.add(key); top.push(c); }
+    if (top.length >= 5) break;
+  }
+
+  // Scale display so R2 ≈ 10 kΩ (same decade for R1 — ratio unchanged)
+  function scalePair(r1m, r2m) {
+    const exp = Math.round(4 - Math.log10(r2m));
+    const s   = Math.pow(10, Math.max(0, Math.min(6, exp)));
+    return {
+      r1: parseFloat((r1m * s).toPrecision(3)),
+      r2: parseFloat((r2m * s).toPrecision(3)),
+    };
+  }
+
+  let html = `<table class="data-table">
+    <thead><tr>
+      <th style="width:2rem">#</th>
+      <th>R1</th>
+      <th>R2</th>
+      <th>Actual V<sub>out</sub></th>
+      <th>Error</th>
+    </tr></thead><tbody>`;
+
+  top.forEach(({ r1m, r2m, ratio, errPct }, i) => {
+    const { r1, r2 } = scalePair(r1m, r2m);
+    const actualVout = vin * ratio;
+    const errStr = errPct < 0.001
+      ? '<span style="color:#15803d;font-weight:700">exact</span>'
+      : errPct.toFixed(3) + '%';
+    const rowStyle = i === 0 ? ' style="background:#f0fdf4;"' : '';
+    html += `<tr${rowStyle}>
+      <td style="color:var(--text-muted);font-weight:600">${i + 1}</td>
+      <td><strong>${fmt(r1,'Ω')}</strong><span class="slv-hint">${r1m}</span></td>
+      <td><strong>${fmt(r2,'Ω')}</strong><span class="slv-hint">${r2m}</span></td>
+      <td style="font-weight:600">${fmt(actualVout,'V')}</td>
+      <td>${errStr}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>
+    <p style="font-size:.76rem;color:var(--text-muted);margin-top:.6rem;">
+      E-series mantissa shown in brackets. Multiply both R1 and R2 by any decade multiple (×100, ×1k, ×10k…) for equivalent pairs with the same V<sub>out</sub>.
+    </p>`;
+
+  document.getElementById('solver-results').innerHTML = html;
+  res.classList.add('visible');
+}
+
+function clearSolver() {
+  ['slv-vin','slv-vout'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('res-solver').classList.remove('visible');
+  document.getElementById('err-solver').classList.remove('visible');
+  document.getElementById('solver-results').innerHTML = '';
 }
 
 function clearAdv() {
