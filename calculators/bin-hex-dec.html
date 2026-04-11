@@ -108,7 +108,8 @@
     }
 
     /* ── 4-bit reference table ── */
-    .nibble-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    .nibble-table { width: 100%; border-collapse: collapse; font-size: .88rem; table-layout: fixed; }
+    .nibble-table th, .nibble-table td { width: 25%; }
     .nibble-table thead tr { background: var(--bg); }
     .nibble-table th {
       padding: .5rem .75rem; text-align: left; font-size: .72rem;
