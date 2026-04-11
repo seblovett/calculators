@@ -63,24 +63,32 @@
     .width-btn.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
 
     /* ── bit visualizer ── */
-    .bit-scroller { overflow-x: auto; padding-bottom: .5rem; }
-    .bit-row { display: flex; gap: 10px; width: max-content; padding: .25rem 0; }
+    .bit-scroller { padding-bottom: .5rem; }
+    .bit-row { display: flex; gap: 10px; padding: .25rem 0; }
+    .bit-row + .bit-row { margin-top: 8px; padding-top: .25rem;
+                          border-top: 1px dashed var(--border); }
 
     .nibble-group { display: flex; flex-direction: column; align-items: center; gap: 0; }
     .nibble-cells { display: flex; gap: 4px; }
 
     .bit-cell {
-      width: 44px; height: 62px; border-radius: 6px;
+      width: 44px; height: 58px; border-radius: 6px;
       border: 1.5px solid #cbd5e1;
       background: #1e293b;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: space-between;
-      padding: 5px 0 5px;
+      align-items: center; justify-content: center; gap: 4px;
+      padding: 4px 0;
       cursor: pointer; user-select: none;
       transition: background .12s, border-color .12s, transform .07s;
     }
     .bit-cell:hover { transform: translateY(-2px); filter: brightness(1.15); }
     .bit-cell:active { transform: translateY(0); }
+
+    /* Smaller cells for wider modes */
+    .bits-16 .bit-cell { width: 38px; height: 54px; }
+    .bits-32 .bit-cell { width: 32px; height: 50px; gap: 2px; }
+    .bits-32 .nibble-cells { gap: 3px; }
+    .bits-32 .bit-row { gap: 8px; }
 
     .bit-weight {
       font-size: .62rem; font-weight: 600; color: #94a3b8;
@@ -91,10 +99,12 @@
       line-height: 1;
       font-family: 'JetBrains Mono', 'Fira Mono', monospace;
     }
+    .bits-32 .bit-val { font-size: 1.1rem; }
     .bit-idx {
       font-size: .6rem; font-weight: 600; color: #64748b;
       line-height: 1;
     }
+    .bits-32 .bit-idx { font-size: .52rem; }
 
     /* ON state — colour set by JS inline style */
     .bit-cell.on .bit-weight { color: rgba(255,255,255,.75); }
@@ -368,39 +378,55 @@ function toggleBit(pos) {
 ═══════════════════════════════════════════════════════ */
 function renderBits() {
   const container = document.getElementById('bit-container');
-  const nibbleCount = bits / 4;
-  let groups = [];
 
-  /* Iterate nibbles from MSN → LSN (left → right) */
-  for (let n = nibbleCount - 1; n >= 0; n--) {
-    const color  = NIBBLE_COLORS[n % NIBBLE_COLORS.length];
-    const nibVal = (value >>> (n * 4)) & 0xF;
+  /* For widths > 8 bits: split across two rows, hide weight labels */
+  const showWeights = bits <= 8;
+  const bitsPerRow  = bits > 8 ? bits / 2 : bits;   // 4→4, 8→8, 16→8, 32→16
+  const numRows     = bits / bitsPerRow;
 
-    let cells = '';
-    /* Bits within nibble from high → low */
-    for (let b = 3; b >= 0; b--) {
-      const bitPos = n * 4 + b;
-      if (bitPos >= bits) continue;
-      const on = (value >>> bitPos) & 1;
-      cells += `<div class="bit-cell${on ? ' on' : ''}"
-          style="${on ? `background:${color};border-color:${color}` : ''}"
-          onclick="toggleBit(${bitPos})"
-          title="Bit ${bitPos} — weight ${1 << bitPos}">
-        <div class="bit-weight">${weightStr(bitPos)}</div>
-        <div class="bit-val">${on}</div>
-        <div class="bit-idx">b${bitPos}</div>
-      </div>`;
+  container.className = bits > 8 ? `bits-${bits}` : '';
+
+  function buildRow(highNibble, lowNibble) {
+    let groups = [];
+    for (let n = highNibble; n >= lowNibble; n--) {
+      const color  = NIBBLE_COLORS[n % NIBBLE_COLORS.length];
+      const nibVal = (value >>> (n * 4)) & 0xF;
+
+      let cells = '';
+      for (let b = 3; b >= 0; b--) {
+        const bitPos = n * 4 + b;
+        if (bitPos >= bits) continue;
+        const on = (value >>> bitPos) & 1;
+        cells += `<div class="bit-cell${on ? ' on' : ''}"
+            style="${on ? `background:${color};border-color:${color}` : ''}"
+            onclick="toggleBit(${bitPos})"
+            title="Bit ${bitPos} — weight ${weightStr(bitPos)}">
+          ${showWeights ? `<div class="bit-weight">${weightStr(bitPos)}</div>` : ''}
+          <div class="bit-val">${on}</div>
+          <div class="bit-idx">b${bitPos}</div>
+        </div>`;
+      }
+
+      groups.push(`<div class="nibble-group">
+        <div class="nibble-cells">${cells}</div>
+        <div class="nibble-tag" style="color:${color}">
+          ${nibVal.toString(16).toUpperCase()}<span style="font-size:.62rem;font-weight:400;color:#94a3b8;margin-left:3px">hex</span>
+        </div>
+      </div>`);
     }
-
-    groups.push(`<div class="nibble-group">
-      <div class="nibble-cells">${cells}</div>
-      <div class="nibble-tag" style="color:${color}">
-        ${nibVal.toString(16).toUpperCase()}<span style="font-size:.62rem;font-weight:400;color:#94a3b8;margin-left:3px">hex</span>
-      </div>
-    </div>`);
+    return `<div class="bit-row">${groups.join('')}</div>`;
   }
 
-  container.innerHTML = `<div class="bit-row">${groups.join('')}</div>`;
+  const nibblesPerRow = bitsPerRow / 4;
+  const totalNibbles  = bits / 4;
+  let html = '';
+  for (let row = 0; row < numRows; row++) {
+    const highN = totalNibbles - 1 - row * nibblesPerRow;
+    const lowN  = highN - nibblesPerRow + 1;
+    html += buildRow(highN, lowN);
+  }
+
+  container.innerHTML = html;
 }
 
 /* ═══════════════════════════════════════════════════════
