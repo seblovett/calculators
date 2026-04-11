@@ -618,6 +618,8 @@ function calcAdv() {
 /* ── Find R1 & R2 solver ── */
 const ESERIES = {
   E6:  [1.0, 1.5, 2.2, 3.3, 4.7, 6.8],
+  // Note: E12⊃E6, E24⊃E12, but E48/E96/E192 are independently rounded
+  // so higher series are NOT strict supersets of lower ones.
   E12: [1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2],
   E24: [1.0,1.1,1.2,1.3,1.5,1.6,1.8,2.0,2.2,2.4,2.7,3.0,
         3.3,3.6,3.9,4.3,4.7,5.1,5.6,6.2,6.8,7.5,8.2,9.1],
@@ -651,6 +653,19 @@ const ESERIES = {
         8.66,8.76,8.87,8.98,9.09,9.20,9.31,9.42,9.53,9.65,9.76,9.88],
 };
 
+/* Build a cumulative set so higher series always include all lower-series values.
+   E48/E96/E192 are independently rounded and don't strictly contain E24/E48/E96,
+   so without this a user moving from E24→E48 could see worse results. */
+const ESERIES_ORDER = ['E6','E12','E24','E48','E96','E192'];
+function getCumulativeVals(seriesName) {
+  const idx = ESERIES_ORDER.indexOf(seriesName);
+  const merged = new Set();
+  for (let i = 0; i <= idx; i++) {
+    ESERIES[ESERIES_ORDER[i]].forEach(v => merged.add(v));
+  }
+  return Array.from(merged).sort((a, b) => a - b);
+}
+
 function calcSolver() {
   const vin  = unitVal('slv-vin');
   const vout = unitVal('slv-vout');
@@ -663,7 +678,7 @@ function calcSolver() {
   if (vout <= 0 || vout >= vin) { err.classList.add('visible'); return; }
 
   const series = document.getElementById('slv-series').value;
-  const vals   = ESERIES[series];
+  const vals   = getCumulativeVals(series);
   const target = vout / vin;   // target R2 / (R1 + R2) — scale-invariant
 
   // Score every (r1_mantissa, r2_mantissa) pair

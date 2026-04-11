@@ -307,6 +307,21 @@ function findNearest() {
 }
 
 /* ═══════════════════════════════════════════════════════
+   Cumulative series helper — ensures E48 always includes E24 values etc.
+   (E48/E96/E192 are independently rounded, so without merging a higher
+   series can produce worse results than a lower one for certain targets.)
+═══════════════════════════════════════════════════════ */
+const SERIES_ORDER = ['E6','E12','E24','E48','E96','E192'];
+function getCumulativeVals(name) {
+  const idx = SERIES_ORDER.indexOf(name);
+  const merged = new Set();
+  for (let i = 0; i <= idx; i++) {
+    SERIES[SERIES_ORDER[i]].forEach(v => merged.add(v));
+  }
+  return Array.from(merged).sort((a, b) => a - b);
+}
+
+/* ═══════════════════════════════════════════════════════
    Ratio solver
 ═══════════════════════════════════════════════════════ */
 function solveRatio() {
@@ -317,7 +332,7 @@ function solveRatio() {
   if (isNaN(target) || target <= 0) { container.innerHTML = ''; return; }
 
   const series = document.getElementById('ratio-series').value;
-  const vals   = SERIES[series];
+  const vals   = getCumulativeVals(series);
 
   // Decompose: target = M × 10^k where M ∈ [1, 10)
   // This lets us search same-decade mantissa pairs (a/b) for any target magnitude.
