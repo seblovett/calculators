@@ -176,10 +176,25 @@
     <div class="page-title">🔢 Base Converter</div>
     <div class="page-subtitle">Convert between binary, hexadecimal, decimal, and octal — with an interactive bit visualiser.</div>
 
-    <!-- ── Converter inputs ── -->
+    <!-- ── Combined visualiser + converter ── -->
     <div class="card">
-      <h2>Convert</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;">
+        <h2 style="margin:0;">Bit Visualiser &amp; Converter</h2>
+        <div class="width-row" style="margin:0;">
+          <span class="width-label">Width:</span>
+          <button class="width-btn" onclick="setWidth(4)"  id="w4">4-bit</button>
+          <button class="width-btn active" onclick="setWidth(8)"  id="w8">8-bit</button>
+          <button class="width-btn" onclick="setWidth(16)" id="w16">16-bit</button>
+          <button class="width-btn" onclick="setWidth(32)" id="w32">32-bit</button>
+        </div>
+      </div>
 
+      <!-- Bit cells -->
+      <div class="bit-scroller" style="margin-bottom:1.25rem;">
+        <div id="bit-container"></div>
+      </div>
+
+      <!-- Input fields -->
       <div class="conv-grid">
         <div class="conv-field">
           <span class="conv-label">Decimal <span class="base-badge" style="background:#dbeafe;color:#1d4ed8">base 10</span></span>
@@ -212,28 +227,8 @@
       </div>
 
       <!-- Quick-set patterns -->
-      <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:.4rem;">Quick set</div>
-      <div class="quick-row" id="quick-row">
-        <!-- filled by JS based on bit width -->
-      </div>
-    </div>
-
-    <!-- ── Bit Visualiser ── -->
-    <div class="card">
-      <h2>Bit Visualiser</h2>
-      <p style="font-size:.83rem;color:var(--text-muted);margin-bottom:1rem;">Click any bit to toggle it. Bits are grouped into nibbles (4 bits) with distinct colours.</p>
-
-      <div class="width-row">
-        <span class="width-label">Width:</span>
-        <button class="width-btn" onclick="setWidth(4)"  id="w4">4-bit</button>
-        <button class="width-btn active" onclick="setWidth(8)"  id="w8">8-bit</button>
-        <button class="width-btn" onclick="setWidth(16)" id="w16">16-bit</button>
-        <button class="width-btn" onclick="setWidth(32)" id="w32">32-bit</button>
-      </div>
-
-      <div class="bit-scroller">
-        <div id="bit-container"></div>
-      </div>
+      <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin:.9rem 0 .4rem;">Quick set</div>
+      <div class="quick-row" id="quick-row"></div>
 
       <!-- Interpretations -->
       <div class="interp-grid" id="interp-grid"></div>
